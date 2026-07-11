@@ -209,3 +209,7 @@ footer { text-align: center; color: #a89877; font-size: .85rem; margin-top: 24px
 .cust-pv { display: flex; align-items: center; gap: 10px; background: var(--paper); border-radius: 7px; padding: 6px; margin: 4px 6px; }
 .cust-pv .pv-info { font-size: .82rem; }
 .cand-add { color: var(--accent-dark); font-weight: 700; border-top: 1px dashed var(--line); margin-top: 4px; }
+/* 十六分双下划线 / 速度 / 延长号 */
+.dp-jp.beam16 { box-shadow: 0 3px 0 0 var(--card), 0 4.6px 0 0 var(--ink); }
+.jp-tempo { font-size: .85rem; font-weight: 700; color: var(--accent-dark); align-self: center; }
+.ferm { font-style: normal; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: .95rem; color: var(--accent-dark); }

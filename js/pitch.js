@@ -87,7 +87,8 @@
   }
 
   function jianpuToSemitone(deg, sharp, oct) {
-    return F_OFFSET + DEG_SEMI[deg] + (sharp ? 1 : 0) + 12 * oct;
+    var acc = (sharp === true) ? 1 : (sharp === false || sharp == null) ? 0 : sharp; // 兼容 ±1
+    return F_OFFSET + DEG_SEMI[deg] + acc + 12 * oct;
   }
 
   // ── 反向：给定弦与目标半音数 → 徽位（按音）──

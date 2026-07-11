@@ -118,21 +118,27 @@
       if (w === '/') { toks.push({ kind: 'br' }); return; }   // 手动换行
       if (/^\d+\/\d+$/.test(w)) { toks.push({ kind: 'time', text: w }); return; }
       if (w === '-') { toks.push({ kind: 'dash' }); return; }
-      if (w === '0' || w === '0.') { toks.push({ kind: 'rest', dotted: w === '0.' }); return; }
-      // 音符组：连写数字=八分组；末尾 . = 附点；含 _ = 单个八分音符；(555) = 三连音
-      var trip = /^\(/.test(w) && /\)\.?$/.test(w.replace(/_/g, ''));
+      var mT = w.match(/^(?:T|♩)=(\d+)$/);                       // 速度 T=60
+      if (mT) { toks.push({ kind: 'tempo', bpm: parseInt(mT[1], 10) }); return; }
+      var mR = w.match(/^0(_|=)?(\.)?$/);                        // 休止 0 / 0_ / 0=
+      if (mR) { toks.push({ kind: 'rest', dotted: !!mR[2], unit: mR[1] === '=' ? 0.25 : mR[1] === '_' ? 0.5 : 1 }); return; }
+      // 音符组：连写=八分组；= 十六分；_ 单八分；(555) 三连音；^ 延长号
+      var trip = /^\(/.test(w) && /\)/.test(w);
+      var ferm = /\^/.test(w);
+      var six = /=/.test(w);
       var eighth = /_/.test(w);
-      var w2 = w.replace(/[_()]/g, '');
-      var group = [], re = /(#?)([1-7])((?:'|,)*)/g, m;
+      var w2 = w.replace(/[_()=^]/g, '');
+      var group = [], re = /([#b]?)([1-7])((?:'|,)*)/g, m;
       var dotted = /\.$/.test(w2);
       while ((m = re.exec(w2)) !== null) {
         var oct = 0;
         for (var i = 0; i < m[3].length; i++) oct += (m[3][i] === "'" ? 1 : -1);
-        group.push({ deg: parseInt(m[2], 10), sharp: !!m[1], oct: oct });
+        group.push({ deg: parseInt(m[2], 10), sharp: m[1] === '#' ? 1 : m[1] === 'b' ? -1 : 0, oct: oct });
       }
       if (group.length) toks.push({
         kind: 'notes', group: group, dotted: dotted,
         beam: group.length > 1, eighth: eighth && group.length === 1,
+        six: six, ferm: ferm,
         triplet: trip && group.length === 3
       });
     });
@@ -146,7 +152,7 @@
     tokensB = toks; notesB = [];
     var prev = null, prevHui = null, failed = [], barJustSeen = true;
     toks.forEach(function (t) {
-      if (t.kind === 'br') return;
+      if (t.kind === 'br' || t.kind === 'tempo') return;
       if (t.kind === 'bar' || t.kind === 'time') { barJustSeen = true; return; }
       if (t.kind === 'dash') { // 延音：上一音是长音
         if (notesB.length) notesB[notesB.length - 1].long = true;
@@ -446,7 +452,7 @@
     menu.style.top = (r.bottom + window.scrollY + 4) + 'px';
   };
 
-  function jpText(n) { return (n.sharp ? '#' : '') + n.deg; }
+  function jpText(n) { return (n.sharp === 1 ? '#' : n.sharp === -1 ? 'b' : '') + n.deg; }
 
   // 简谱音符 HTML：上八度点(+泛音圈) / [↗↘走音箭头]数字(+附点) / 下八度点
   function jpNoteHtml(n, dotted, pre, fanCirc) {
@@ -455,7 +461,7 @@
     var bot = n.oct < 0 ? new Array(-n.oct + 1).join('<i class="odot">·</i>') : '';
     return '<span class="jp-note"><span class="od-top">' + top + '</span>' +
       '<span class="jp-num">' + (pre ? '<i class="jp-pre">' + pre + '</i>' : '') +
-      (n.sharp ? '<i class="sharp">♯</i>' : '') + n.deg +
+      (n.sharp === 1 ? '<i class="sharp">♯</i>' : n.sharp === -1 ? '<i class="sharp">♭</i>' : '') + n.deg +
       (dotted ? '<i class="pdot">·</i>' : '') + '</span>' +
       '<span class="od-bot">' + bot + '</span></span>';
   }
@@ -506,7 +512,11 @@
             S.timeCell(p[0], p[1]), ''); return;
         }
         if (t.kind === 'dash') { html += colHtml('<span class="jp-num">–</span>', S.padCell(false), ''); return; }
-        if (t.kind === 'rest') { html += colHtml('<span class="jp-num">0' + (t.dotted ? '·' : '') + '</span>', S.padCell(true), ''); return; }
+        if (t.kind === 'tempo') { html += colHtml('<span class="jp-tempo">♩=' + t.bpm + '</span>', S.padCell(false), ''); return; }
+        if (t.kind === 'rest') {
+          var rCls = t.unit === 0.25 ? 'beam beam16' : t.unit === 0.5 ? 'beam' : '';
+          html += colHtml('<span class="jp-num">0' + (t.dotted ? '·' : '') + '</span>', S.padCell(true), '', rCls); return;
+        }
         // notes 组
         var jpRow = '', jzRow = '', stn = [];
         t.group.forEach(function (n, gi) {
@@ -545,10 +555,12 @@
           }
         });
         if (t.triplet) jpRow = '<i class="trip3">3</i>' + jpRow; // 三连音标记
-        var jpCls = (t.beam || t.eighth) ? 'beam' : '';
+        if (t.ferm) jpRow = '<i class="ferm">𝄐</i>' + jpRow;      // 延长号
+        var jpCls = (t.beam || t.eighth || t.six) ? 'beam' : '';
+        if (t.six) jpCls += ' beam16';
         if (t.triplet) jpCls += ' has-trip';
         html += '<div class="dp-col" data-col="' + ti + '"><div class="dp-jp' + (jpCls ? ' ' + jpCls : '') + '">' + jpRow + '</div>' +
-          '<div class="dp-staff">' + (stn.length ? S.cell(stn, { beam: t.beam, eighth: t.eighth }) : S.padCell(false)) + '</div>' +
+          '<div class="dp-staff">' + (stn.length ? S.cell(stn, { beam: t.beam, eighth: t.eighth, six: t.six }) : S.padCell(false)) + '</div>' +
           '<div class="dp-jz">' + jzRow + '</div></div>';
       });
       html += '</div>';
@@ -612,8 +624,8 @@
       "2/4 |: 5,. 6,_ 1 1 | 1. 2_ | 5 (555) 6 2 | 5 - / " +
       "1' 2' 2' 1'6 5 5 | 2'. 3'_ 5' 5' | 1'. 6_ 1' 6 | 5 1' 6 5 | 5 3 5 / " +
       "5 (666) 5 (666) | 5. 3_ 2. 3_ | 5 5 | 1' (666) 51' 65 / " +
-      "53 22 22 | 2 5 3. 2_ | 1 1 | 6 22 22 | 1. 2_ 16 / " +
-      "51' 65 | 53 22 22 | 2 5 3. 2_ | 1 1 / " +
+      "53 2222= | 2 5 3. 2_ | 1 1 | 6 2222= | 1. 2_ 16 / " +
+      "51' 65 | 53 2222= | 2 5 3. 2_ | 1 1 / " +
       "5,. 6,_ 1 1 | 1. 2_ | 5 (555) 5 6 | 2. 3_ 21 1 | 1 2 3 5 :| 1 - ||";
     convertJianpu();
   };
@@ -623,18 +635,21 @@
 
   function eventsFromB() {
     var ev = [], t = 0, lastSemi = null, atBarStart = true;
+    var spb = SPB; // 可被谱中 T=NN 改变
     tokensB.forEach(function (tk, ti) {
       var col = ti + 1; // 第0列是谱号
       if (tk.kind === 'br') return;
+      if (tk.kind === 'tempo') { spb = 60 / tk.bpm; return; }
       if (tk.kind === 'bar' || tk.kind === 'time') { atBarStart = true; return; }
-      if (tk.kind === 'rest') { t += (tk.dotted ? 1.5 : 1) * SPB; return; }
+      if (tk.kind === 'rest') { t += (tk.unit || 1) * (tk.dotted ? 1.5 : 1) * spb; return; }
       if (tk.kind === 'dash') { // 延音：上一音的拍值加长，余音继续
-        if (ev.length) ev[ev.length - 1].dur += SPB;
-        t += SPB; return;
+        if (ev.length) ev[ev.length - 1].dur += spb;
+        t += spb; return;
       }
       tk.group.forEach(function (n, gi) {
-        var unit = tk.triplet ? (1 / 3) : (tk.beam || tk.eighth) ? 0.5 : 1; // 三连音1/3拍;八分半拍
-        var dur = unit * ((tk.dotted && gi === tk.group.length - 1) ? 1.5 : 1) * SPB;
+        var unit = tk.triplet ? (1 / 3) : tk.six ? 0.25 : (tk.beam || tk.eighth) ? 0.5 : 1;
+        var dur = unit * ((tk.dotted && gi === tk.group.length - 1) ? 1.5 : 1) * spb;
+        if (tk.ferm && gi === tk.group.length - 1) dur *= 1.6; // 延长号
         // 力度分层（拉开差距才听得见）：小节头强拍 1.0 → 正拍 0.7 →
         // 八分前半 0.58 → 八分后半 0.42；附点/长音是乐句呼吸点，给 0.9
         var vel = atBarStart ? 1.0 : (unit === 0.5 && gi % 2 === 1) ? 0.42 : (unit === 0.5 ? 0.58 : 0.7);

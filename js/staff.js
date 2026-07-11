@@ -98,8 +98,9 @@
         var yt = p.y - 26;
         stemTops.push({ x: x + 4.2, y: yt });
         s += '<line x1="' + (x + 4.2) + '" y1="' + p.y + '" x2="' + (x + 4.2) + '" y2="' + yt + '" class="st-stem"/>';
-        if (opts.eighth && n === 1) { // 单八分音符旗
+        if ((opts.eighth || opts.six) && n === 1) { // 单八分/十六分音符旗
           s += '<path d="M' + (x + 4.2) + ' ' + yt + ' C' + (x + 12) + ' ' + (yt + 4) + ' ' + (x + 11) + ' ' + (yt + 12) + ' ' + (x + 7) + ' ' + (yt + 17) + '" class="st-flag"/>';
+          if (opts.six) s += '<path d="M' + (x + 4.2) + ' ' + (yt + 7) + ' C' + (x + 12) + ' ' + (yt + 11) + ' ' + (x + 11) + ' ' + (yt + 19) + ' ' + (x + 7) + ' ' + (yt + 24) + '" class="st-flag"/>';
         }
       } else {
         var yb = p.y + 26;
@@ -116,6 +117,7 @@
         if (t.y > by) s += '<line x1="' + t.x + '" y1="' + t.y + '" x2="' + t.x + '" y2="' + by + '" class="st-stem"/>';
       });
       s += '<line x1="' + stemTops[0].x + '" y1="' + by + '" x2="' + stemTops[stemTops.length - 1].x + '" y2="' + by + '" class="st-beam"/>';
+      if (opts.six) s += '<line x1="' + stemTops[0].x + '" y1="' + (by + 6) + '" x2="' + stemTops[stemTops.length - 1].x + '" y2="' + (by + 6) + '" class="st-beam"/>';
     }
     return s + '</svg>';
   }
