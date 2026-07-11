@@ -1,0 +1,731 @@
+/* 琴谱通 app.js —— 界面逻辑（两个方向的转换 + 编辑） */
+(function () {
+  'use strict';
+  var P = window.QinPitch, J = window.QinJianzi, S = window.QinStaff;
+  var $ = function (id) { return document.getElementById(id); };
+
+  // 通用三行列：简谱行 / 五线谱行 / 减字行
+  function colHtml(jp, staff, jz, jpCls) {
+    return '<div class="dp-col"><div class="dp-jp' + (jpCls ? ' ' + jpCls : '') + '">' + jp + '</div>' +
+      '<div class="dp-staff">' + staff + '</div><div class="dp-jz">' + jz + '</div></div>';
+  }
+
+  /* ══════════ 标签页切换 ══════════ */
+  window.switchTab = function (name) {
+    ['j2p', 'p2j', 'tut', 'about'].forEach(function (t) {
+      $('tab-' + t).classList.toggle('active', t === name);
+      $('panel-' + t).style.display = (t === name) ? '' : 'none';
+    });
+  };
+
+  /* ══════════ 方向一：减字谱 → 简谱 ══════════ */
+  var scoreA = []; // [{kind:'note',note} | {kind:'bar'}]
+
+  // 走音/技法勾选项（与 index.html 复选框 id 一一对应）
+  var ORN_IDS = ['绰', '注', '吟', '猱', '上', '下', '进复', '退复', '撞', '双撞', '唤', '逗',
+    '往来', '淌', '分开', '罨', '虚罨', '掐起', '带起', '爪起', '推出', '放合'];
+
+  function currentNoteFromForm() {
+    var type = $('selType').value;
+    var note = {
+      type: type,
+      string: parseInt($('selString').value, 10),
+      right: $('selRight').value,
+      orn: []
+    };
+    if (type !== 'san') {
+      note.left = $('selLeft').value;
+      note.hui = parseInt($('selHui').value, 10);
+      note.fen = parseInt($('selFen').value, 10) || 0;
+      if (type === 'fan') note.fen = 0; // 泛音只在整徽
+    }
+    ORN_IDS.forEach(function (o) {
+      var el = $('orn' + o);
+      if (el && el.checked) note.orn.push(o);
+    });
+    return note;
+  }
+
+  function noteJianpu(note) {
+    var t = P.noteSemitone(note);
+    if (t === null || isNaN(t)) return null;
+    return P.semitoneToJianpu(t);
+  }
+
+  window.updatePreview = function () {
+    var note = currentNoteFromForm();
+    var jp = noteJianpu(note);
+    $('previewBox').innerHTML = J.render(note, 88) +
+      '<div class="pv-info">' + J.label(note) +
+      (jp ? ' → 简谱 <b>' + jp.text + '</b>' : ' → <span class="warn">此位置无法发音</span>') + '</div>';
+    // 泛音只能在整徽：切到泛音时禁用"分"
+    $('selFen').disabled = ($('selType').value === 'fan');
+    var isSan = ($('selType').value === 'san');
+    $('selLeft').disabled = isSan; $('selHui').disabled = isSan;
+    if (isSan) $('selFen').disabled = true;
+  };
+
+  window.addNote = function () {
+    var note = currentNoteFromForm();
+    if (noteJianpu(note) === null) { alert('此弦徽组合无法发音（按音须高于散音），请调整。'); return; }
+    scoreA.push({ kind: 'note', note: note });
+    renderScoreA();
+  };
+  window.addBarA = function () { scoreA.push({ kind: 'bar' }); renderScoreA(); };
+  window.undoNote = function () { scoreA.pop(); renderScoreA(); };
+  window.clearScoreA = function () { if (scoreA.length === 0 || confirm('清空整段谱？')) { scoreA = []; renderScoreA(); } };
+
+  // 三行对照谱：简谱行 + 五线谱行 + 减字行
+  function renderScoreA() {
+    var jpLine = [], nNotes = 0;
+    var html = '<div class="duipu">' + colHtml('', S.clefCell(), '');
+    scoreA.forEach(function (it) {
+      if (it.kind === 'bar') {
+        jpLine.push('|');
+        html += colHtml('<span class="jp-barline"></span>', S.barCell(false), '');
+        return;
+      }
+      var n = it.note; nNotes++;
+      var jp = noteJianpu(n), semi = P.noteSemitone(n);
+      jpLine.push(jp ? jp.text : '?');
+      var src = jp ? { deg: parseInt(jp.deg.replace('#', ''), 10), sharp: jp.deg.charAt(0) === '#', oct: jp.oct } : null;
+      html += colHtml(
+        src ? jpNoteHtml(src, false) : '<span class="jp-num">?</span>',
+        S.cell([{ semi: semi }], {}),
+        '<span class="jz-cell" title="' + J.label(n) + '">' + J.render(n, 44, { bare: true }) + '</span>');
+    });
+    html += '</div>';
+    $('scoreA').innerHTML = scoreA.length ? html : '<div class="empty">尚未录入，用上方按钮拼出减字后点「添加」</div>';
+    $('outJianpu').value = jpLine.join(' ');
+    $('cntA').textContent = nNotes;
+  }
+
+  /* ══════════ 方向二：简谱 → 对照谱（简谱行＋减字行） ══════════
+   * 记法：| 小节线   2/4 拍号   0 休止   - 延音
+   *       1. 附点    1' 高八度  1, 低八度  #4 升半音
+   *       连写如 12 = 八分音符组（下加横线），每个数字各配一个减字
+   */
+  var tokensB = [];   // 排版元素流
+  var notesB = [];    // 扁平音符表 [{cands,pick,src}]，供点击切换
+
+  function parseScore(text) {
+    var toks = [], raw = text.trim().split(/\s+/);
+    raw.forEach(function (w) {
+      if (!w) return;
+      if (w === '|' || w === '||') { toks.push({ kind: 'bar', fin: w === '||' }); return; }
+      if (w === '|:') { toks.push({ kind: 'bar', rep: 'L' }); return; }
+      if (w === ':|') { toks.push({ kind: 'bar', rep: 'R' }); return; }
+      if (w === '/') { toks.push({ kind: 'br' }); return; }   // 手动换行
+      if (/^\d+\/\d+$/.test(w)) { toks.push({ kind: 'time', text: w }); return; }
+      if (w === '-') { toks.push({ kind: 'dash' }); return; }
+      if (w === '0' || w === '0.') { toks.push({ kind: 'rest', dotted: w === '0.' }); return; }
+      // 音符组：连写数字=八分组；末尾 . = 附点；含 _ = 单个八分音符；(555) = 三连音
+      var trip = /^\(/.test(w) && /\)\.?$/.test(w.replace(/_/g, ''));
+      var eighth = /_/.test(w);
+      var w2 = w.replace(/[_()]/g, '');
+      var group = [], re = /(#?)([1-7])((?:'|,)*)/g, m;
+      var dotted = /\.$/.test(w2);
+      while ((m = re.exec(w2)) !== null) {
+        var oct = 0;
+        for (var i = 0; i < m[3].length; i++) oct += (m[3][i] === "'" ? 1 : -1);
+        group.push({ deg: parseInt(m[2], 10), sharp: !!m[1], oct: oct });
+      }
+      if (group.length) toks.push({
+        kind: 'notes', group: group, dotted: dotted,
+        beam: group.length > 1, eighth: eighth && group.length === 1,
+        triplet: trip && group.length === 3
+      });
+    });
+    return toks;
+  }
+
+  window.convertJianpu = function () {
+    var toks = parseScore($('inJianpu').value);
+    var nNotes = toks.reduce(function (a, t) { return a + (t.kind === 'notes' ? t.group.length : 0); }, 0);
+    if (nNotes === 0) { alert('没有解析到音符。示例：2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3'); return; }
+    tokensB = toks; notesB = [];
+    var prev = null, prevHui = null, failed = [], barJustSeen = true;
+    toks.forEach(function (t) {
+      if (t.kind === 'br') return;
+      if (t.kind === 'bar' || t.kind === 'time') { barJustSeen = true; return; }
+      if (t.kind === 'dash') { // 延音：上一音是长音
+        if (notesB.length) notesB[notesB.length - 1].long = true;
+        return;
+      }
+      if (t.kind !== 'notes') return;
+      t.refs = [];
+      t.group.forEach(function (n, gi) {
+        var semi = P.jianpuToSemitone(n.deg, n.sharp, n.oct);
+        var cands = P.candidatesFor(semi, prev, { mStart: barJustSeen && gi === 0, prevHui: prevHui });
+        if (cands.length === 0) {
+          failed.push(jpText(n));
+          t.refs.push(-1);
+          return;
+        }
+        prev = cands[0].string;
+        prevHui = (cands[0].type === 'an') ? cands[0].hui : prevHui;
+        t.refs.push(notesB.length);
+        notesB.push({
+          cands: cands, pick: 0, src: n,
+          mStart: gi === 0 && barJustSeen,
+          beam: t.beam,
+          dotted: t.dotted && gi === t.group.length - 1
+        });
+      });
+      // 八分组内三连同音 → 轮（摘剔挑连作），标记组内序号
+      if (t.beam && t.group.length === 3 &&
+          t.group.every(function (g) { return g.deg === t.group[0].deg && g.oct === t.group[0].oct && g.sharp === t.group[0].sharp; })) {
+        t.refs.forEach(function (r, k) { if (r !== -1) notesB[r].trip = k; });
+      }
+      barJustSeen = false;
+    });
+    if (notesB.length) notesB[notesB.length - 1].final = true;
+    renderScoreB();
+    $('convMsg').textContent = failed.length ?
+      '⚠️ 以下音超出古琴正调音域（标红处）：' + failed.join(' ') : '';
+  };
+
+  function candToNote(c, right, orn) {
+    right = right || (c.string <= 3 ? '勾' : '挑');
+    if (c.type === 'san') return { type: 'san', string: c.string, right: right, orn: orn || [] };
+    // 左手选指惯例：九徽及以下把位用名指，七八徽高把位用大指；泛音习惯标中指
+    var left = (c.type === 'fan') ? '中' : (c.hui >= 9) ? '名' : '大';
+    return { type: c.type, string: c.string, hui: c.hui, fen: c.fen, waiwei: c.waiwei, left: left, right: right, orn: orn || [] };
+  }
+
+  /* 演奏法分配（琴人惯例，逐音扫一遍）：
+   *  ① 句尾/延音长音 → 撮（双弦齐鸣结音）
+   *  ② 同弦同音重复 → 勾剔/抹挑交替（模拟轮指）
+   *  ③ 小节头的一二弦散音 → 托（大指起句）
+   *  ④ 其余：一~三弦勾、四~七弦挑
+   *  走音：按音上行加绰、下行加注（八分组除外）；附点/延音按音加吟 */
+  function computePerform() {
+    var prev = null, prevSemi = null, prevType = null, prevString = null, walkChain = 0;
+    notesB.forEach(function (it) {
+      var c = it.cands[it.pick];
+      var target = P.jianpuToSemitone(it.src.deg, it.src.sharp, it.src.oct);
+      // ── 走音判定（古琴"一弹多音"）：上一音是同弦按音/走音，音程≤大三度
+      //    → 本音由左手上/下滑到位，右手不另弹（谱记小字"上/下+徽位"）
+      it.walkAvail = null; it.walk = null;
+      if (it.trip === undefined && !it.long && !it.final &&
+          (prevType === 'an' || prevType === 'walk') && walkChain < 3 &&
+          prevSemi !== null && Math.abs(target - prevSemi) <= 4 && Math.abs(target - prevSemi) > 0.01) {
+        var wpos = P.findPosition(prevString, target);
+        if (wpos && !wpos.waiwei && wpos.hui >= 5) {
+          it.walkAvail = { dir: target > prevSemi ? '上' : '下', string: prevString, hui: wpos.hui, fen: wpos.fen };
+        }
+      }
+      if (it.walkAvail && !it.noWalk && it.pick === 0) {
+        it.walk = it.walkAvail;
+        walkChain++;
+        it.right = null; it.orn = [];
+        prevType = 'walk'; prevString = it.walk.string; prevSemi = target;
+        return;
+      }
+      walkChain = 0;
+      var semi = P.noteSemitone(candToNote(c));
+      var right, orn = [];
+      if (it.trip !== undefined) {
+        right = ['摘', '剔', '挑'][it.trip];       // 三连同音 = 轮的拆解
+      } else if (it.final || it.long) {
+        right = '撮';
+      } else if (prev && prev.string === c.string && prevSemi !== null && Math.abs(prevSemi - semi) < 0.01) {
+        right = (prev.right === '勾') ? '剔' :
+                (prev.right === '剔') ? '勾' :
+                (prev.right === '托') ? '擘' :
+                (prev.right === '擘') ? '托' :
+                (prev.right === '挑') ? '抹' : '挑';
+      } else if (it.mStart && c.type === 'san' && c.string <= 2) {
+        right = '托';
+      } else {
+        right = c.string <= 3 ? '勾' : '挑';
+      }
+      if (c.type === 'an' && !it.beam && prevSemi !== null) {
+        if (semi > prevSemi + 0.5) orn.push('绰');
+        else if (semi < prevSemi - 0.5) orn.push('注');
+      }
+      // 韵味装饰：附点长音加吟（细颤），延音大长音加猱（阔颤更悠远）
+      if (c.type === 'an' && !it.final) {
+        if (it.long) orn.push('猱');
+        else if (it.dotted) orn.push('吟');
+      }
+      it.right = right; it.orn = orn;
+      prev = { string: c.string, right: right };
+      prevType = c.type; prevString = c.string;
+      prevSemi = semi;
+    });
+    // 连续泛音段：首标「泛起」尾标「泛止」（单个泛音只标「泛」）
+    var runStart = -1;
+    for (var i = 0; i <= notesB.length; i++) {
+      var isFan = i < notesB.length && !notesB[i].walk && notesB[i].cands[notesB[i].pick].type === 'fan';
+      if (isFan) { notesB[i].fanMark = null; if (runStart < 0) runStart = i; }
+      else if (runStart >= 0) {
+        if (i - runStart >= 2) { notesB[runStart].fanMark = '起'; notesB[i - 1].fanMark = '止'; }
+        runStart = -1;
+      }
+    }
+  }
+
+  /* 点击减字 → 弹出全部弹法菜单供选择 */
+  function closeCandMenu() { var m = $('candMenu'); if (m) m.remove(); }
+  document.addEventListener('click', closeCandMenu);
+
+  window.showCands = function (ref, ev) {
+    ev.stopPropagation();
+    closeCandMenu();
+    var it = notesB[ref];
+    var menu = document.createElement('div');
+    menu.id = 'candMenu'; menu.className = 'cand-menu';
+    var head = document.createElement('div');
+    head.className = 'cand-head';
+    var total = it.cands.length + (it.walkAvail ? 1 : 0);
+    head.textContent = total > 1 ? ('此音共 ' + total + ' 种弹法：') : '此音只有一种弹法：';
+    menu.appendChild(head);
+    // 走音选项（若上一音同弦可滑到位）
+    if (it.walkAvail) {
+      var wNote = { type: 'walk', dir: it.walkAvail.dir, string: it.walkAvail.string, hui: it.walkAvail.hui, fen: it.walkAvail.fen };
+      var wd = document.createElement('div');
+      wd.className = 'cand-item' + (it.walk ? ' sel' : '');
+      wd.innerHTML = J.render(wNote, 38, { bare: true }) +
+        '<span>' + J.label(wNote) + (it.walk ? '　✓ 当前' : '') + '</span>';
+      wd.onclick = function (e) {
+        e.stopPropagation();
+        it.noWalk = false; it.pick = 0;
+        closeCandMenu();
+        renderScoreB();
+      };
+      menu.appendChild(wd);
+    }
+    it.cands.forEach(function (c, i) {
+      var note = candToNote(c, it.right, it.orn);
+      var d = document.createElement('div');
+      var isCur = (i === it.pick && !it.walk);
+      d.className = 'cand-item' + (isCur ? ' sel' : '');
+      d.innerHTML = J.render(note, 38, { bare: true }) +
+        '<span>' + J.label(note) + (isCur ? '　✓ 当前' : '') + '</span>';
+      d.onclick = function (e) {
+        e.stopPropagation();
+        it.pick = i;
+        it.noWalk = true; // 明确选了拨弦弹法 → 不再自动走音
+        closeCandMenu();
+        renderScoreB(); // 重排会按新弹法重算全谱指法惯例
+        var pn = candToNote(it.cands[i]);
+        window.QinAudio.playSeq([{ t: 0, semi: P.noteSemitone(pn), col: null, orn: it.orn, right: pn.right, ntype: pn.type }], null);
+      };
+      menu.appendChild(d);
+    });
+    document.body.appendChild(menu);
+    var r = ev.currentTarget.getBoundingClientRect();
+    menu.style.left = Math.max(6, Math.min(window.innerWidth - menu.offsetWidth - 10, r.left)) + 'px';
+    menu.style.top = (r.bottom + window.scrollY + 4) + 'px';
+  };
+
+  function jpText(n) { return (n.sharp ? '#' : '') + n.deg; }
+
+  // 简谱音符 HTML：上八度点(+泛音圈) / [↗↘走音箭头]数字(+附点) / 下八度点
+  function jpNoteHtml(n, dotted, pre, fanCirc) {
+    var top = (fanCirc ? '<i class="fan-circ">○</i>' : '') +
+      (n.oct > 0 ? new Array(n.oct + 1).join('<i class="odot">·</i>') : '');
+    var bot = n.oct < 0 ? new Array(-n.oct + 1).join('<i class="odot">·</i>') : '';
+    return '<span class="jp-note"><span class="od-top">' + top + '</span>' +
+      '<span class="jp-num">' + (pre ? '<i class="jp-pre">' + pre + '</i>' : '') +
+      (n.sharp ? '<i class="sharp">♯</i>' : '') + n.deg +
+      (dotted ? '<i class="pdot">·</i>' : '') + '</span>' +
+      '<span class="od-bot">' + bot + '</span></span>';
+  }
+
+  // 该音的简谱行前缀记号：走音→⌒上/下箭头；绰→↗ 注→↘
+  function jpPre(it) {
+    if (it.walk) return ''; // 走音由真弧线表达
+    if (it.orn && it.orn.indexOf('绰') >= 0) return '↗';
+    if (it.orn && it.orn.indexOf('注') >= 0) return '↘';
+    return '';
+  }
+
+  function renderScoreB() {
+    if (tokensB.length === 0) {
+      $('scoreB').innerHTML = '<div class="empty">输入简谱后点「转换」</div>'; return;
+    }
+    computePerform();
+    // ── 分行（仿谱书按乐句排行）：显式 / 换行；无 / 时每 4 小节自动换行 ──
+    var lines = [], cur = [], barCount = 0;
+    var hasBr = tokensB.some(function (t) { return t.kind === 'br'; });
+    tokensB.forEach(function (t, ti) {
+      if (t.kind === 'br') { if (cur.length) { lines.push(cur); cur = []; } return; }
+      cur.push([t, ti]);
+      if (!hasBr && t.kind === 'bar' && !t.fin) {
+        barCount++;
+        if (barCount % 4 === 0) { lines.push(cur); cur = []; }
+      }
+    });
+    if (cur.length) lines.push(cur);
+
+    var html = '';
+    var prevPk = null; // 谱书简省惯例：连续同指法散音，后字只写弦号（如"勾一 二 三"）
+    lines.forEach(function (line) {
+      prevPk = null; // 行首恢复全字
+      html += '<div class="duipu">' + colHtml('', S.clefCell(), ''); // 每行行首谱号
+      line.forEach(function (pair) {
+        var t = pair[0], ti = pair[1];
+        if (t.kind === 'bar') {
+          var jpBar = (t.rep === 'L' ? '<span class="rep-dots">:</span>' : '') +
+            '<span class="jp-barline' + (t.fin || t.rep ? ' fin' : '') + '"></span>' +
+            (t.rep === 'R' ? '<span class="rep-dots">:</span>' : '');
+          if (t.rep === 'L') jpBar = '<span class="jp-barline fin"></span><span class="rep-dots">:</span>';
+          html += colHtml(jpBar, S.barCell(t.fin || !!t.rep, t.rep), ''); return;
+        }
+        if (t.kind === 'time') {
+          var p = t.text.split('/');
+          html += colHtml('<span class="jp-time"><span>' + p[0] + '</span><span>' + p[1] + '</span></span>',
+            S.timeCell(p[0], p[1]), ''); return;
+        }
+        if (t.kind === 'dash') { html += colHtml('<span class="jp-num">–</span>', S.padCell(false), ''); return; }
+        if (t.kind === 'rest') { html += colHtml('<span class="jp-num">0' + (t.dotted ? '·' : '') + '</span>', S.padCell(true), ''); return; }
+        // notes 组
+        var jpRow = '', jzRow = '', stn = [];
+        t.group.forEach(function (n, gi) {
+          var ref = t.refs[gi];
+          var lastInGroup = (gi === t.group.length - 1);
+          if (ref === -1) {
+            jpRow += jpNoteHtml(n, t.dotted && lastInGroup, '', false);
+            jzRow += '<span class="jz-miss" title="超出正调音域">×</span>';
+          } else {
+            var it = notesB[ref];
+            var c = it.cands[it.pick];
+            var note;
+            if (it.walk) {
+              note = { type: 'walk', dir: it.walk.dir, string: it.walk.string, hui: it.walk.hui, fen: it.walk.fen };
+              stn.push({ semi: P.anSemitone(it.walk.string, it.walk.hui, it.walk.fen), dotted: t.dotted && lastInGroup });
+            } else {
+              note = candToNote(c, it.right, it.orn);
+              if (it.fanMark) note.fanMark = it.fanMark;
+              stn.push({ semi: P.noteSemitone(note), dotted: t.dotted && lastInGroup });
+            }
+            jpRow += jpNoteHtml(n, t.dotted && lastInGroup, jpPre(it), !it.walk && c.type === 'fan');
+            var tip = J.label(note) + '（点击查看全部弹法）';
+            // 谱书简省：连续同指法的散音（无走音无装饰）→ 只写弦号
+            var plainSan = !it.walk && note.type === 'san' && (!note.orn || !note.orn.length) && !note.fanMark;
+            if (plainSan && prevPk && prevPk.right === note.right) {
+              jzRow += '<span class="jz-cell jz-abbr" onclick="showCands(' + ref + ',event)" title="同前指法·' + tip + '">' +
+                '<span class="abbr-num">' + J.NUM[note.string] + '</span></span>';
+            } else {
+              jzRow += '<span class="jz-cell" onclick="showCands(' + ref + ',event)" title="' + tip + '">' +
+                J.render(note, t.beam ? 34 : 44, { bare: true }) + '</span>';
+            }
+            prevPk = it.walk ? null : (plainSan ? { right: note.right } : null);
+          }
+        });
+        if (t.triplet) jpRow = '<i class="trip3">3</i>' + jpRow; // 三连音标记
+        var jpCls = (t.beam || t.eighth) ? 'beam' : '';
+        if (t.triplet) jpCls += ' has-trip';
+        html += '<div class="dp-col" data-col="' + ti + '"><div class="dp-jp' + (jpCls ? ' ' + jpCls : '') + '">' + jpRow + '</div>' +
+          '<div class="dp-staff">' + (stn.length ? S.cell(stn, { beam: t.beam, eighth: t.eighth }) : S.padCell(false)) + '</div>' +
+          '<div class="dp-jz">' + jzRow + '</div></div>';
+      });
+      html += '</div>';
+    });
+    $('scoreB').innerHTML = html;
+    drawWalkArcs();
+  }
+
+  /* 走音真弧线（仿谱书：弧线+箭头跨在前音与走音之间） */
+  function drawWalkArcs() {
+    var NS = 'http://www.w3.org/2000/svg';
+    document.querySelectorAll('#scoreB .duipu').forEach(function (duipu) {
+      var old = duipu.querySelector('.arc-layer');
+      if (old) old.remove();
+      var dRect = duipu.getBoundingClientRect();
+      if (!dRect.width) return;
+      var layer = document.createElementNS(NS, 'svg');
+      layer.setAttribute('class', 'arc-layer');
+      layer.setAttribute('width', dRect.width);
+      layer.setAttribute('height', dRect.height);
+      var lastNoteJp = null;
+      duipu.querySelectorAll('.dp-col').forEach(function (col) {
+        var jp = col.querySelector('.dp-jp');
+        var hasNote = col.querySelector('.jz-cell') || col.querySelector('.jz-miss');
+        var isWalk = col.querySelector('.jz-walk');
+        if (isWalk && lastNoteJp) {
+          var r1 = lastNoteJp.getBoundingClientRect();
+          var r2 = jp.getBoundingClientRect();
+          var x1 = r1.left + r1.width / 2 - dRect.left;
+          var x2 = r2.left + r2.width / 2 - dRect.left;
+          var y = Math.min(r1.top, r2.top) - dRect.top - 2;
+          var lift = Math.min(15, (x2 - x1) * 0.3 + 6);
+          var path = document.createElementNS(NS, 'path');
+          path.setAttribute('d', 'M' + x1 + ' ' + y + ' Q' + ((x1 + x2) / 2) + ' ' + (y - lift) + ' ' + x2 + ' ' + y);
+          path.setAttribute('class', 'arc-path');
+          layer.appendChild(path);
+          var head = document.createElementNS(NS, 'path');
+          head.setAttribute('d', 'M' + (x2 - 5) + ' ' + (y - 4) + ' L' + (x2 + 0.5) + ' ' + y + ' L' + (x2 - 5.5) + ' ' + (y + 1.5) + ' Z');
+          head.setAttribute('class', 'arc-head');
+          layer.appendChild(head);
+        }
+        if (hasNote) lastNoteJp = jp;
+      });
+      duipu.appendChild(layer);
+    });
+  }
+  window.addEventListener('resize', function () { drawWalkArcs(); });
+
+  /* ══════════ 示例（正调 1=F）══════════ */
+  window.loadDemo = function () {
+    $('inJianpu').value =
+      "2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3 | 5 6 5 3 | 5 323 26 | " +
+      "3/4 2. 1_ 2 1 | 2. 1_ 2 12 | 3. 6,_ 2 6, | 2/4 1. 5,_ | 3' 5' 6' ||";
+    convertJianpu();
+  };
+  // 《关山月》全曲（梅庵琴谱·查阜西演奏谱；前两段与用户琴书核对一致，
+  // 后四段按网络查阜西谱转写——八度与个别时值待与原书二页核对；
+  // 原谱四个十六分连音暂以两组八分近似）
+  window.loadDemo2 = function () {
+    $('inJianpu').value =
+      "2/4 |: 5,. 6,_ 1 1 | 1. 2_ | 5 (555) 6 2 | 5 - / " +
+      "1' 2' 2' 1'6 5 5 | 2'. 3'_ 5' 5' | 1'. 6_ 1' 6 | 5 1' 6 5 | 5 3 5 / " +
+      "5 (666) 5 (666) | 5. 3_ 2. 3_ | 5 5 | 1' (666) 51' 65 / " +
+      "53 22 22 | 2 5 3. 2_ | 1 1 | 6 22 22 | 1. 2_ 16 / " +
+      "51' 65 | 53 22 22 | 2 5 3. 2_ | 1 1 / " +
+      "5,. 6,_ 1 1 | 1. 2_ | 5 (555) 5 6 | 2. 3_ 21 1 | 1 2 3 5 :| 1 - ||";
+    convertJianpu();
+  };
+
+  /* ══════════ 试听（模拟古琴拨弦）══════════ */
+  var SPB = 60 / 56; // ♩=56，琴曲宜缓
+
+  function eventsFromB() {
+    var ev = [], t = 0, lastSemi = null, atBarStart = true;
+    tokensB.forEach(function (tk, ti) {
+      var col = ti + 1; // 第0列是谱号
+      if (tk.kind === 'br') return;
+      if (tk.kind === 'bar' || tk.kind === 'time') { atBarStart = true; return; }
+      if (tk.kind === 'rest') { t += (tk.dotted ? 1.5 : 1) * SPB; return; }
+      if (tk.kind === 'dash') { // 延音：上一音的拍值加长，余音继续
+        if (ev.length) ev[ev.length - 1].dur += SPB;
+        t += SPB; return;
+      }
+      tk.group.forEach(function (n, gi) {
+        var unit = tk.triplet ? (1 / 3) : (tk.beam || tk.eighth) ? 0.5 : 1; // 三连音1/3拍;八分半拍
+        var dur = unit * ((tk.dotted && gi === tk.group.length - 1) ? 1.5 : 1) * SPB;
+        // 力度分层（拉开差距才听得见）：小节头强拍 1.0 → 正拍 0.7 →
+        // 八分前半 0.58 → 八分后半 0.42；附点/长音是乐句呼吸点，给 0.9
+        var vel = atBarStart ? 1.0 : (unit === 0.5 && gi % 2 === 1) ? 0.42 : (unit === 0.5 ? 0.58 : 0.7);
+        if ((tk.dotted && gi === tk.group.length - 1) && !atBarStart) vel = Math.max(vel, 0.9);
+        atBarStart = false;
+        var ref = tk.refs[gi];
+        if (ref !== -1) {
+          var it = notesB[ref];
+          if (it.walk) { // 走音：从上一音滑过去，不重新拨弦
+            var ws = P.anSemitone(it.walk.string, it.walk.hui, it.walk.fen);
+            ev.push({ t: t, semi: ws, col: col, orn: [], glideFrom: lastSemi, dur: dur, str: it.walk.string, vel: vel });
+            lastSemi = ws;
+          } else {
+            var cc = it.cands[it.pick];
+            var s = P.noteSemitone(candToNote(cc));
+            ev.push({ t: t, semi: s, col: col, orn: it.orn, dur: dur, str: cc.string, vel: vel, right: it.right, ntype: cc.type });
+            lastSemi = s;
+          }
+        }
+        t += dur;
+      });
+    });
+    return ev;
+  }
+
+  function eventsFromA() {
+    var ev = [], t = 0;
+    scoreA.forEach(function (it) {
+      if (it.kind !== 'note') return;
+      ev.push({ t: t, semi: P.noteSemitone(it.note), col: null, orn: it.note.orn, dur: SPB, str: it.note.string, vel: (ev.length % 2 === 0 ? 0.95 : 0.65), right: it.note.right, ntype: it.note.type });
+      t += SPB;
+    });
+    return ev;
+  }
+
+  function highlightB(col) {
+    document.querySelectorAll('#scoreB .dp-col.playing').forEach(function (c) { c.classList.remove('playing'); });
+    if (col !== null) {
+      var el = document.querySelector('#scoreB .dp-col[data-col="' + (col - 1) + '"]');
+      if (el) el.classList.add('playing');
+    }
+  }
+
+  window.playB = function () { window.QinAudio.playSeq(eventsFromB(), highlightB); };
+  window.playA = function () { window.QinAudio.playSeq(eventsFromA(), null); };
+  window.stopPlay = function () { window.QinAudio.stop(); highlightB(null); };
+  window.playCurrent = function () {
+    var note = currentNoteFromForm();
+    var s = P.noteSemitone(note);
+    if (s !== null && !isNaN(s)) window.QinAudio.playSeq([{ t: 0, semi: s, col: null, orn: note.orn, right: note.right, ntype: note.type }], null);
+  };
+
+  /* ══════════ 教程页：用真渲染器注入示例减字 ══════════ */
+
+  // 指法动作示意图：琴面俯视（上=一弦·远侧，下=七弦·近身），箭头=拨弦方向
+  function motionSVG(finger, inward) {
+    var w = 120, h = 84, top = 12, gap = 8;
+    var NUMS = ['一', '二', '三', '四', '五', '六', '七'];
+    var s = '<svg viewBox="0 0 ' + w + ' ' + h + '" width="120" height="84" class="tut-motion" role="img">';
+    for (var i = 0; i < 7; i++) {
+      var y = top + i * gap;
+      s += '<line x1="26" y1="' + y + '" x2="' + (w - 6) + '" y2="' + y + '" class="tm-str' + (i === 3 ? ' hit' : '') + '"/>';
+      s += '<text x="13" y="' + (y + 3) + '" class="tm-num">' + NUMS[i] + '</text>';
+    }
+    var x = 74, yT = top + 3 * gap;                 // 以四弦为例
+    var y1 = inward ? yT - 18 : yT + 18;            // 指尖起点
+    var y2 = inward ? yT + 14 : yT - 14;            // 拨过弦后
+    var dir = inward ? 1 : -1;
+    s += '<line x1="' + x + '" y1="' + y1 + '" x2="' + x + '" y2="' + y2 + '" class="tm-arrow"/>';
+    s += '<path d="M' + (x - 4) + ' ' + (y2 - 6 * dir) + ' L' + x + ' ' + y2 + ' L' + (x + 4) + ' ' + (y2 - 6 * dir) + '" class="tm-head"/>';
+    s += '<circle cx="' + x + '" cy="' + y1 + '" r="4" class="tm-finger"/>';
+    s += '<text x="' + (x + 9) + '" y="' + (y1 + (inward ? -3 : 8)) + '" class="tm-label">' + finger + '</text>';
+    s += '<text x="' + (w - 6) + '" y="' + (h - 2) + '" class="tm-side" text-anchor="end">' +
+      (inward ? '向内＝朝身体' : '向外＝离身') + '</text>';
+    return s + '</svg>';
+  }
+
+  function tutInit() {
+    if (!$('tutBig')) return;
+    $('tutBig').innerHTML = J.render({ type: 'an', string: 4, hui: 9, left: '名', right: '挑' }, 110);
+    // 三种音色
+    var timbres = [
+      { n: { type: 'san', string: 3, right: '挑' }, t: '<b>散音</b>：空弦，左手不按。<br>上半写「艹」。声如钟，多用于曲首曲尾。' },
+      { n: { type: 'an', string: 4, hui: 9, left: '名', right: '挑' }, t: '<b>按音</b>：左手按在徽位上弹。<br>琴曲的主体，可走音变化。' },
+      { n: { type: 'fan', string: 3, hui: 7, left: '中', right: '挑' }, t: '<b>泛音</b>：左手轻点徽位即离。<br>左上角红「泛」。声如天籁。' }
+    ];
+    var h = '';
+    timbres.forEach(function (x) {
+      h += '<div class="tut-cell">' + J.render(x.n, 66) + '<p>' + x.t + '</p></div>';
+    });
+    $('tutTimbre').innerHTML = h;
+    // 右手八法
+    var rights = [
+      ['挑', '食指', '向外弹出', '最常用的指法，声音清亮'],
+      ['抹', '食指', '向内弹入', '与挑成对，声音温厚'],
+      ['勾', '中指', '向内弹入', '浑厚有力，低音常用'],
+      ['剔', '中指', '向外弹出', '与勾成对'],
+      ['打', '名指', '向内弹入', '轻柔'],
+      ['摘', '名指', '向外弹出', '与打成对，滚指法的基础'],
+      ['托', '大指', '向外推出', '常弹低音弦'],
+      ['擘', '大指', '向内弹入', '与托成对']
+    ];
+    h = '<tr><th>指法</th><th>减字</th><th>手指</th><th>方向</th><th>动作示意（琴面俯视）</th><th>特点</th></tr>';
+    rights.forEach(function (r) {
+      var inward = r[2].indexOf('向内') === 0;
+      var fingerShort = r[1].charAt(0); // 食/中/名/大
+      h += '<tr><td><b>' + r[0] + '</b></td><td>' + J.render({ type: 'san', string: 3, right: r[0] }, 34, { bare: true }) +
+        '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + motionSVG(fingerShort, inward) + '</td><td>' + r[3] + '</td></tr>';
+    });
+    $('tutRight').innerHTML = h;
+    // 左手与走音
+    var lefts = [
+      ['大指', '大', '按弦主力，与食指配合'],
+      ['食指', '人', '省文作「人」'],
+      ['中指', '中', ''],
+      ['名指', '夕', '省文作「夕」，按高把位常用']
+    ];
+    var orns = [
+      ['绰', '自下而上滑入本位（上滑音），出音有"迎"意'],
+      ['注', '自上而下滑入本位（下滑音），出音有"落"意'],
+      ['吟', '按弦后小幅度摆动，声音微颤如吟哦'],
+      ['猱', '按弦后较大幅度摆动，苍劲之声'],
+      ['上', '弹响后左手沿弦上移至另一徽位，音随之升高'],
+      ['下', '弹响后左手下移，音随之降低'],
+      ['进复', '上移一位再回到本位（去而复返，两个音）'],
+      ['退复', '下移一位再回到本位'],
+      ['撞', '弹响后向上急撞一下立刻回来，短促有力'],
+      ['双撞', '连撞两次，急切之声'],
+      ['唤', '先撞后注的连续动作，如呼唤之声'],
+      ['逗', '弹的同时向上急逗一下随即归位，比撞更贴着弹音'],
+      ['往来', '在两个徽位间来回移动数次，余音袅袅'],
+      ['淌', '缓缓下滑，音渐淌落，多接在注、下之后'],
+      ['分开', '走音两声分开清晰弹出（各谱系细节略异）']
+    ];
+    var techs = [
+      ['罨', '左手指不弹而直接击按弦上出声，音闷而古'],
+      ['虚罨', '罨的轻虚之作，声若有若无'],
+      ['掐起', '大指甲扣弦抠起出声（名指按住不动），「掐撮三声」的核心'],
+      ['带起', '左手指离弦时顺势勾带空弦出声'],
+      ['爪起', '大指甲轻抠弦离弦出声，比带起更轻'],
+      ['推出', '中指按弦向外推出发声'],
+      ['放合', '按指放开得散音，与随后弹出的音相合呼应']
+    ];
+    h = '<tr><th colspan="3">左手四指（写在减字左上角）</th></tr>';
+    lefts.forEach(function (r) { h += '<tr><td><b>' + r[0] + '</b></td><td class="tut-glyph">' + r[1] + '</td><td>' + r[2] + '</td></tr>'; });
+    h += '<tr><th colspan="3">走音（弹响之后左手的动作，写在减字旁）</th></tr>';
+    orns.forEach(function (r) { h += '<tr><td><b>' + r[0] + '</b></td><td></td><td>' + r[1] + '</td></tr>'; });
+    h += '<tr><th colspan="3">左手出声技法（不靠右手弹，左手自己出音）</th></tr>';
+    techs.forEach(function (r) { h += '<tr><td><b>' + r[0] + '</b></td><td></td><td>' + r[1] + '</td></tr>'; });
+    $('tutLeft').innerHTML = h;
+
+    // 右手组合指法表（全表）
+    var combos = [
+      ['撮', '大/食与中指同时弹两根弦，双音齐鸣，常用于结音'],
+      ['反撮', '撮后两指反方向再弹一次，与撮成对'],
+      ['如一声', '两声几乎同时发出、合若一声，常接双弹之后'],
+      ['双弹', '食中二指在同一弦上先后急弹两声'],
+      ['蠲', '食中二指在同一弦上急速连弹两声，轻快如珠（juān）'],
+      ['轮', '名中食三指在同一弦上摘、剔、挑连作，如珠落玉盘'],
+      ['半轮', '轮的省作，只取其中两声'],
+      ['背锁', '剔、抹、挑三声连作，短促铿锵'],
+      ['短锁', '背锁前加抹勾引带，约五声连作'],
+      ['长锁', '抹挑往复再接背锁，约七声连作（各谱系声数略有出入）'],
+      ['打圆', '两音往复弹奏共七声，圆转如环'],
+      ['索铃', '食指向外连续挑过数弦，颤动如摇铃（《普庵咒》标志指法）'],
+      ['滚', '名指由高弦向低弦连摘数弦，如水倾泻'],
+      ['拂', '食指由低弦向高弦连抹数弦，与滚相对'],
+      ['滚拂', '滚、拂连作一气，波涛之声（《流水》标志指法）'],
+      ['历', '食指连挑相邻两三弦，轻快连贯'],
+      ['泼', '食中名三指并拢向内击弦'],
+      ['剌', '三指并拢向外扫出'],
+      ['泼剌', '泼、剌连作，声如裂帛（《广陵散》多用）'],
+      ['伏', '弹后随即以手掌轻按弦上止住余音']
+    ];
+    h = '<tr><th>指法</th><th>减字</th><th>动作说明</th></tr>';
+    combos.forEach(function (r) {
+      h += '<tr><td><b>' + r[0] + '</b></td><td>' + J.render({ type: 'san', string: 3, right: r[0] }, 34, { bare: true }) +
+        '</td><td style="text-align:left">' + r[1] + '</td></tr>';
+    });
+    $('tutCombo').innerHTML = h;
+
+    // 谱字术语速查
+    var terms = [
+      ['泛起 / 泛止', '泛音段开始 / 结束的标记'],
+      ['少息', '稍作停顿，气口'],
+      ['大息', '较长的停顿'],
+      ['入慢', '由此渐慢'],
+      ['紧', '由此加快'],
+      ['再作', '从记号处再弹一遍'],
+      ['从头再作', '整段从头重复'],
+      ['曲终', '全曲结束（常接泛音尾声）']
+    ];
+    if ($('tutTerms')) {
+      h = '<tr><th>谱字</th><th>含义</th></tr>';
+      terms.forEach(function (r) { h += '<tr><td><b>' + r[0] + '</b></td><td style="text-align:left">' + r[1] + '</td></tr>'; });
+      $('tutTerms').innerHTML = h;
+    }
+  }
+
+  // 初始化
+  document.addEventListener('DOMContentLoaded', function () {
+    // 徽位下拉 1~13
+    var huiSel = $('selHui');
+    for (var h = 1; h <= 13; h++) {
+      var o = document.createElement('option');
+      o.value = h; o.textContent = J.NUM[h] + '徽';
+      if (h === 9) o.selected = true;
+      huiSel.appendChild(o);
+    }
+    ['selType', 'selString', 'selLeft', 'selHui', 'selFen', 'selRight'].forEach(function (id) {
+      $(id).addEventListener('change', updatePreview);
+    });
+    ORN_IDS.forEach(function (o) {
+      var el = $('orn' + o); if (el) el.addEventListener('change', updatePreview);
+    });
+    updatePreview();
+    renderScoreA();
+    renderScoreB();
+    tutInit();
+    // 首次进入方向二自动载入《普庵咒》示例，让人一眼看懂产品
+    if (!$('inJianpu').value) loadDemo();
+  });
+})();

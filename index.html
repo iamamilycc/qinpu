@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>琴谱通 · 减字谱 ⇄ 简谱</title>
+<meta name="description" content="古琴减字谱与简谱双向转换工具：点选录入减字谱自动译出简谱；输入简谱自动编配古琴指法生成减字谱。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>琴谱通</h1>
+  <p class="sub">古琴减字谱 ⇄ 简谱 · 双向转换 <span class="tag">正调 1=F</span></p>
+</header>
+
+<nav class="tabs">
+  <button id="tab-j2p" class="active" onclick="switchTab('j2p')">减字谱 → 简谱</button>
+  <button id="tab-p2j" onclick="switchTab('p2j')">简谱 → 减字谱</button>
+  <button id="tab-tut" onclick="switchTab('tut')">📖 教程</button>
+  <button id="tab-about" onclick="switchTab('about')">说明</button>
+</nav>
+
+<!-- ══════════ 方向一：减字谱 → 简谱 ══════════ -->
+<main id="panel-j2p" class="panel">
+  <section class="card">
+    <h2>① 拼一个减字</h2>
+    <div class="form-grid">
+      <label>音色
+        <select id="selType">
+          <option value="an" selected>按音</option>
+          <option value="san">散音（空弦）</option>
+          <option value="fan">泛音</option>
+        </select>
+      </label>
+      <label>弦
+        <select id="selString">
+          <option value="1">一弦</option><option value="2">二弦</option>
+          <option value="3">三弦</option><option value="4" selected>四弦</option>
+          <option value="5">五弦</option><option value="6">六弦</option>
+          <option value="7">七弦</option>
+        </select>
+      </label>
+      <label>左手指
+        <select id="selLeft">
+          <option value="大">大指</option><option value="食">食指</option>
+          <option value="中">中指</option><option value="名" selected>名指</option>
+          <option value="跪">跪指（名指跪按）</option>
+        </select>
+      </label>
+      <label>徽位
+        <select id="selHui"></select>
+      </label>
+      <label>徽分
+        <select id="selFen">
+          <option value="0" selected>整徽</option>
+          <option value="1">一分</option><option value="2">二分</option>
+          <option value="3">三分</option><option value="4">四分</option>
+          <option value="5">五分</option><option value="6">六分</option>
+          <option value="7">七分</option><option value="8">八分</option>
+          <option value="9">九分</option>
+        </select>
+      </label>
+      <label>右手指法
+        <select id="selRight">
+          <optgroup label="基本八法">
+            <option value="挑" selected>挑</option><option value="抹">抹</option>
+            <option value="勾">勾</option><option value="剔">剔</option>
+            <option value="打">打</option><option value="摘">摘</option>
+            <option value="托">托</option><option value="擘">擘</option>
+          </optgroup>
+          <optgroup label="撮类·双弦">
+            <option value="撮">撮（双弦齐鸣）</option>
+            <option value="反撮">反撮</option>
+            <option value="如一声">如一声</option>
+            <option value="双弹">双弹</option>
+            <option value="蠲">蠲（同弦急弹两声）</option>
+          </optgroup>
+          <optgroup label="轮锁类·连音">
+            <option value="轮">轮（摘剔挑连作）</option>
+            <option value="半轮">半轮</option>
+            <option value="背锁">背锁（剔抹挑）</option>
+            <option value="短锁">短锁</option>
+            <option value="长锁">长锁</option>
+            <option value="打圆">打圆</option>
+            <option value="索铃">索铃（连挑数弦）</option>
+          </optgroup>
+          <optgroup label="扫弦类·多弦">
+            <option value="滚">滚（连摘多弦）</option>
+            <option value="拂">拂（连抹多弦）</option>
+            <option value="滚拂">滚拂</option>
+            <option value="历">历（连挑两三弦）</option>
+            <option value="泼">泼</option><option value="剌">剌</option>
+            <option value="泼剌">泼剌</option>
+            <option value="伏">伏（掩弦止音）</option>
+          </optgroup>
+        </select>
+      </label>
+    </div>
+    <div class="orn-row">
+      走音：
+      <label class="chk"><input type="checkbox" id="orn绰">绰</label>
+      <label class="chk"><input type="checkbox" id="orn注">注</label>
+      <label class="chk"><input type="checkbox" id="orn吟">吟</label>
+      <label class="chk"><input type="checkbox" id="orn猱">猱</label>
+      <label class="chk"><input type="checkbox" id="orn上">上</label>
+      <label class="chk"><input type="checkbox" id="orn下">下</label>
+      <label class="chk"><input type="checkbox" id="orn进复">进复</label>
+      <label class="chk"><input type="checkbox" id="orn退复">退复</label>
+      <label class="chk"><input type="checkbox" id="orn撞">撞</label>
+      <label class="chk"><input type="checkbox" id="orn双撞">双撞</label>
+      <label class="chk"><input type="checkbox" id="orn唤">唤</label>
+      <label class="chk"><input type="checkbox" id="orn逗">逗</label>
+      <label class="chk"><input type="checkbox" id="orn往来">往来</label>
+      <label class="chk"><input type="checkbox" id="orn淌">淌</label>
+      <label class="chk"><input type="checkbox" id="orn分开">分开</label>
+    </div>
+    <div class="orn-row">
+      左手技法：
+      <label class="chk"><input type="checkbox" id="orn罨">罨</label>
+      <label class="chk"><input type="checkbox" id="orn虚罨">虚罨</label>
+      <label class="chk"><input type="checkbox" id="orn掐起">掐起</label>
+      <label class="chk"><input type="checkbox" id="orn带起">带起</label>
+      <label class="chk"><input type="checkbox" id="orn爪起">爪起</label>
+      <label class="chk"><input type="checkbox" id="orn推出">推出</label>
+      <label class="chk"><input type="checkbox" id="orn放合">放合</label>
+    </div>
+    <div id="previewBox" class="preview"></div>
+    <div class="btn-row">
+      <button class="primary" onclick="addNote()">➕ 添加到谱</button>
+      <button onclick="playCurrent()">🔊 试听此音</button>
+      <button onclick="addBarA()">▏小节线</button>
+      <button onclick="undoNote()">↩️ 撤销上一个</button>
+      <button onclick="clearScoreA()">🗑 清空</button>
+    </div>
+  </section>
+
+  <section class="card score-card">
+    <h2>② 三行对照谱（共 <span id="cntA">0</span> 字）</h2>
+    <div class="btn-row" style="margin-bottom:8px">
+      <button onclick="playA()">▶ 试听整段</button>
+      <button onclick="stopPlay()">⏹ 停止</button>
+      <button onclick="window.print()">🖨 打印 / 存PDF</button>
+    </div>
+    <div id="scoreA" class="score"></div>
+    <h2 style="margin-top:1em">③ 译出简谱</h2>
+    <textarea id="outJianpu" readonly rows="2" placeholder="录入减字后自动生成"></textarea>
+    <p class="note">⚠️ 减字谱不记节奏，此处只译音高；节奏须按打谱传统由弹琴人自行处理。「'」= 高八度，「,」= 低八度。</p>
+  </section>
+</main>
+
+<!-- ══════════ 方向二：简谱 → 减字谱 ══════════ -->
+<main id="panel-p2j" class="panel" style="display:none">
+  <section class="card">
+    <h2>① 输入简谱旋律</h2>
+    <textarea id="inJianpu" rows="3" placeholder="例：2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3"></textarea>
+    <p class="note">记法：<b>|</b> 小节线　<b>2/4</b> 拍号　<b>1.</b> 附点　<b>-</b> 延音　<b>0</b> 休止　<b>1'</b> 高八度　<b>1,</b> 低八度　<b>#4</b> 升半音　<b>连写 12</b> = 八分音符组　<b>6_</b> = 单八分　<b>(555)</b> = 三连音　<b>/</b> = 换行　<b>|:</b> <b>:|</b> = 反复</p>
+    <div class="btn-row">
+      <button class="primary" onclick="convertJianpu()">🎼 转换为减字谱</button>
+      <button onclick="loadDemo()">示例：普庵咒</button>
+      <button onclick="loadDemo2()">示例：关山月</button>
+    </div>
+    <p id="convMsg" class="warn"></p>
+  </section>
+  <section class="card score-card">
+    <h2>② 三行对照谱（简谱＋五线谱＋减字）</h2>
+    <div class="btn-row" style="margin-bottom:8px">
+      <button onclick="playB()">▶ 试听（真琴采样）</button>
+      <button onclick="stopPlay()">⏹ 停止</button>
+      <button onclick="window.print()">🖨 打印 / 存PDF</button>
+    </div>
+    <div id="scoreB" class="score"></div>
+    <p class="note">💡 自动编配仅是<b>一种</b>可行弹法（散音优先、就近取位）。同一个音古琴上常有多种弹法——<b>点击任一减字，全部弹法会弹出菜单供选择</b>（选中即试听该音）。</p>
+  </section>
+</main>
+
+<!-- ══════════ 教程 ══════════ -->
+<main id="panel-tut" class="panel" style="display:none">
+  <section class="card">
+    <h2>一、减字是怎么拼出来的</h2>
+    <p>减字谱不记「什么音」，记「怎么弹」。每个减字由几个部件上下叠成：</p>
+    <div class="tut-flex">
+      <span id="tutBig"></span>
+      <ul>
+        <li><b>左上</b> = 左手哪根手指按（大＝大指、人＝食指、中＝中指、夕＝名指）</li>
+        <li><b>右上</b> = 按第几徽（可带徽分，如「七六」＝七徽六分）</li>
+        <li><b>下半</b> = 右手指法 ＋ 弹第几弦</li>
+        <li>左边这个字念作：「<b>名指按九徽，右手挑四弦</b>」</li>
+      </ul>
+    </div>
+  </section>
+  <section class="card">
+    <h2>二、三种音色</h2>
+    <div id="tutTimbre" class="tut-grid"></div>
+  </section>
+  <section class="card">
+    <h2>三、右手八法（弹弦的八种基本指法）</h2>
+    <table class="tut-table" id="tutRight"></table>
+    <p class="note">示意图为<b>琴面俯视</b>：上方是一弦（离身体远的粗弦），下方是七弦（靠近弹琴人）。口诀：<b>向内＝朝自己身体方向弹，向外＝离开身体方向弹</b>。大指托擘、食指抹挑、中指勾剔、名指打摘，两两成对。</p>
+  </section>
+  <section class="card">
+    <h2>三之二、右手组合指法</h2>
+    <table class="tut-table" id="tutCombo"></table>
+    <p class="note">组合指法在录入器「右手指法→组合指法」分组里可选。撮、滚、拂等涉及多弦，谱面照记，试听暂按所选单弦发声。</p>
+  </section>
+  <section class="card">
+    <h2>四、左手按弦与走音</h2>
+    <table class="tut-table" id="tutLeft"></table>
+    <p class="note">走音是古琴的灵魂：先弹响，再靠左手在弦上滑动改变音高，「一弹多音」。减字谱把这些动作记在字旁小注里。</p>
+  </section>
+  <section class="card">
+    <h2>四之二、谱字术语（不是指法，是谱面指示）</h2>
+    <table class="tut-table" id="tutTerms"></table>
+  </section>
+  <section class="card">
+    <h2>五、徽位与徽分</h2>
+    <p>琴面镶的十三个圆点叫「<b>徽</b>」，从琴头数起为一徽到十三徽，是按弦取音的坐标。<b>泛音</b>只能在徽的正上方弹出；<b>按音</b>可在任意位置，两徽之间十等分记作「徽分」——如「七六」＝七徽六分。徽位越靠近岳山（一徽方向），音越高。</p>
+  </section>
+  <section class="card">
+    <h2>六、本软件怎么用</h2>
+    <ol>
+      <li><b>看懂一张减字谱</b>：进「减字谱 → 简谱」，照谱逐字点选（音色→弦→徽位→指法）→ 点「添加」，即出简谱音高＋试听。</li>
+      <li><b>把简谱变古琴谱</b>：进「简谱 → 减字谱」，输入旋律（可含小节线、附点、八分组）→ 转换，得三行对照谱。</li>
+      <li><b>换弹法</b>：自动编配只是一种弹法，<b>点击任一减字</b>弹出全部弹法菜单，点选即换（并试听该音）。</li>
+      <li><b>试听</b>：▶ 按钮用模拟古琴拨弦音播放整段，谱面同步高亮。</li>
+      <li><b>打印</b>：🖨 按钮可打印或存 PDF（只印谱面）。</li>
+    </ol>
+  </section>
+</main>
+
+<!-- ══════════ 说明 ══════════ -->
+<main id="panel-about" class="panel" style="display:none">
+  <section class="card">
+    <h2>这是什么</h2>
+    <p>琴谱通把<b>古琴减字谱</b>和<b>简谱</b>互相转换：不识减字谱的人能看懂琴谱的音高；会看简谱的人能得到一份可参考的古琴弹法。</p>
+    <h2>诚实说明（请务必一读）</h2>
+    <ul>
+      <li><b>节奏</b>：减字谱三千年来不记节奏，节奏靠琴人「打谱」诠释。本站只转换音高，不臆造节奏。</li>
+      <li><b>指法编配</b>：简谱→减字谱按琴人惯例自动编配——散按结合就近取位、低弦勾高弦挑、重复音勾剔/抹挑交替、小节头低弦散音用托、句尾长音用撮、按音上行加绰下行加注、长音加吟、高音恰逢泛音位则取泛音。仍只是<b>一种</b>参考弹法，不是唯一答案，更不能替代老师；点击任一减字可弹出全部弹法菜单选择。</li>
+      <li><b>徽分</b>：按十二平均律计算到「徽分」（相邻两徽十等分），实际演奏以耳定音。</li>
+      <li><b>字形</b>：部分减字省文（挑、剔、摘、擘等）字形尚在校对中，暂以全字或近似部件显示。</li>
+      <li><b>定弦</b>：目前只支持正调（1=F，一至七弦 = 低5 低6 1 2 3 5 6），其他调弦陆续添加。</li>
+      <li><b>五线谱行</b>：简化版（低音谱表、F大调）——音高、符桿、八分符杠、附点齐全；三连音、延音线、装饰音记号暂未绘制。</li>
+      <li><b>试听音色</b>：默认使用<b>真古琴空弦采样</b>（RafaelCaro 录制，<a href="https://freesound.org/people/RafaelCaro/sounds/176266/" target="_blank">freesound.org #176266</a>，CC-BY 4.0 授权，实测音准与标准正调偏差≤13音分）——空弦音即原声，按音/泛音由最近的空弦采样变调而来，把位越高音色越偏亮；采样解码失败时自动退回合成音。节奏按记谱直译（♩=56），仅供校对音高。</li>
+    </ul>
+    <h2>减字怎么读</h2>
+    <p>一个减字上下两半：<b>上半</b>=左手（哪根手指＋按第几徽），<b>下半</b>=右手（什么指法＋弹第几弦）。例如「名九挑四」= 名指按九徽、右手挑四弦。散音（空弦）上半写「艹」。泛音左上角标「泛」。</p>
+  </section>
+</main>
+
+<footer>琴谱通 · 减字谱⇄简谱转换 · 音高可算，韵味在人</footer>
+
+<script src="js/pitch.js"></script>
+<script src="js/jianzi.js"></script>
+<script src="js/staff.js"></script>
+<script src="js/samples.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

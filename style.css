@@ -1,0 +1,199 @@
+/* 琴谱通 —— 素纸墨色，向古谱致意 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #2b2620;
+  --paper: #f7f2e7;
+  --card: #fffdf6;
+  --line: #d8cdb4;
+  --accent: #8a5a2b;
+  --accent-dark: #6d4620;
+  --red: #a33c2f;
+}
+body {
+  font-family: "Songti SC", "Noto Serif SC", "STSong", serif;
+  background: var(--paper);
+  color: var(--ink);
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 16px 14px 40px;
+  line-height: 1.65;
+}
+header { text-align: center; padding: 14px 0 4px; }
+h1 { font-size: 2rem; letter-spacing: .35em; text-indent: .35em; }
+.sub { color: #7a6c53; margin-top: 2px; }
+.tag { font-size: .78em; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--accent); }
+
+.tabs { display: flex; gap: 6px; margin: 16px 0 12px; }
+.tabs button {
+  flex: 1; padding: 10px 4px; font-size: 1rem; font-family: inherit;
+  background: transparent; border: 1px solid var(--line); border-radius: 8px 8px 0 0;
+  color: #7a6c53; cursor: pointer;
+}
+.tabs button.active { background: var(--card); color: var(--accent-dark); border-bottom-color: var(--card); font-weight: 700; }
+
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(80,60,30,.06);
+}
+h2 { font-size: 1.05rem; color: var(--accent-dark); margin-bottom: 10px; }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.form-grid label { display: flex; flex-direction: column; font-size: .88rem; color: #6d5f47; gap: 3px; }
+select, textarea {
+  font-family: inherit; font-size: 1rem; padding: 7px 8px;
+  border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink);
+}
+select:disabled { opacity: .4; }
+textarea { width: 100%; resize: vertical; }
+
+.orn-row { margin: 10px 0 4px; font-size: .92rem; color: #6d5f47; }
+.chk { margin-right: 12px; cursor: pointer; }
+
+.preview {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--paper); border: 1px dashed var(--line); border-radius: 8px;
+  padding: 10px; margin: 12px 0;
+  min-height: 100px;
+}
+.pv-info { font-size: .95rem; color: #5d5140; }
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+button { font-family: inherit; }
+.btn-row button, .btn-row .primary {
+  padding: 9px 16px; font-size: .95rem; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: #fff; color: var(--ink);
+}
+.btn-row .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-row .primary:hover { background: var(--accent-dark); }
+
+.score {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 10px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+  min-height: 96px;
+}
+.cell { text-align: center; }
+.cell-click { cursor: pointer; }
+.cell-click:hover .jz-box { stroke: var(--accent); }
+.cell-jp { font-size: .85rem; color: var(--accent-dark); margin-top: 1px; }
+.cell-alt { font-size: .7rem; color: #a89877; }
+.empty { color: #a89877; font-size: .9rem; align-self: center; }
+
+.jianzi { display: block; margin: 0 auto; }
+.jz-box { fill: #fff; stroke: var(--line); stroke-width: 1.5; }
+.jianzi text { fill: var(--ink); font-family: "Songti SC", "Noto Serif SC", serif; font-weight: 600; }
+.jz-fan { fill: var(--red) !important; }
+.jz-orn { fill: #6d5f47 !important; font-weight: 400 !important; }
+
+/* ── 对照谱（简谱行＋减字行，仿谱书排版）── */
+.duipu {
+  display: flex; flex-wrap: wrap; align-items: stretch;
+  row-gap: 26px; column-gap: 2px; padding: 14px 6px;
+}
+.dp-col { display: flex; flex-direction: column; align-items: center; min-width: 34px; }
+.dp-jp {
+  display: flex; align-items: flex-end; justify-content: center;
+  min-height: 46px; padding: 0 5px;
+}
+.dp-jp.beam { border-bottom: 1.6px solid var(--ink); padding-bottom: 2px; }
+.jp-note { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; margin: 0 2px; }
+.jp-num { font-size: 1.25rem; font-weight: 600; display: inline-flex; align-items: center; }
+.od-top, .od-bot { height: 10px; display: flex; align-items: center; justify-content: center; }
+.odot { font-style: normal; font-size: 1rem; line-height: 0; }
+.jp-pre { font-style: normal; font-size: .62em; color: var(--accent-dark); margin-right: 1px; letter-spacing: -2px; }
+.fan-circ { font-style: normal; font-size: .72rem; line-height: 0; color: var(--ink); }
+.jz-walk { opacity: .92; }
+.jz-walk text { fill: var(--accent-dark); }
+.sharp { font-style: normal; font-size: .7em; margin-right: 1px; }
+.pdot { font-style: normal; margin-left: 2px; }
+.dp-jz { display: flex; align-items: flex-start; justify-content: center; margin-top: 2px; min-height: 52px; gap: 1px; }
+.jz-cell { cursor: pointer; border-radius: 5px; }
+.jz-cell:hover { background: #efe6d2; }
+.jz-miss { color: var(--red); font-size: 1.2rem; align-self: center; }
+.jp-barline { display: block; width: 1.5px; height: 40px; background: var(--ink); margin: 0 5px; }
+.jp-barline.fin { width: 5px; border-left: 1.5px solid var(--ink); background: var(--ink); }
+.jp-time { display: flex; flex-direction: column; align-items: center; font-weight: 700; font-size: 1.05rem; line-height: 1.05; }
+.jp-time span:first-child { border-bottom: 1.5px solid var(--ink); padding: 0 2px; }
+
+/* ── 五线谱行 ── */
+.dp-staff { display: flex; justify-content: center; margin-top: 4px; }
+.staffcell { display: block; }
+.st-line { stroke: #6d6250; stroke-width: 1; }
+.st-head { fill: var(--ink); }
+.st-head-hollow { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.st-stem { stroke: var(--ink); stroke-width: 1.2; }
+.st-beam { stroke: var(--ink); stroke-width: 3.4; }
+.st-acc { font-size: 11px; fill: var(--ink); }
+.st-clef { font-size: 40px; fill: var(--ink); }
+.st-time { font-size: 15px; font-weight: 700; text-anchor: middle; fill: var(--ink); }
+.st-bar { stroke: var(--ink); stroke-width: 1.5; }
+.st-barfin { fill: var(--ink); }
+.st-rest { font-size: 16px; text-anchor: middle; fill: var(--ink); }
+.st-dot { fill: var(--ink); }
+
+/* ── 播放跟随高亮 ── */
+.dp-col.playing { background: #f3e3c3; border-radius: 8px; }
+
+/* ── 弹法选择菜单 ── */
+.cand-menu {
+  position: absolute; z-index: 99;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 5px 18px rgba(80, 60, 30, .22);
+  padding: 6px; min-width: 230px; max-height: 340px; overflow-y: auto;
+}
+.cand-head { font-size: .8rem; color: #8a7a5e; padding: 3px 8px 5px; }
+.cand-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 8px; border-radius: 7px; cursor: pointer; font-size: .92rem;
+}
+.cand-item:hover { background: #efe6d2; }
+.cand-item.sel { background: #f3e3c3; font-weight: 700; }
+
+/* ── 教程页 ── */
+.tut-flex { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.tut-grid { display: flex; gap: 22px; flex-wrap: wrap; }
+.tut-cell { text-align: center; max-width: 200px; }
+.tut-cell p { font-size: .88rem; text-align: left; margin-top: 4px; }
+.tut-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.tut-table th, .tut-table td { border: 1px solid var(--line); padding: 5px 8px; text-align: center; font-size: .92rem; }
+.tut-table th { background: var(--paper); color: var(--accent-dark); }
+.tut-glyph { font-size: 1.3rem; font-weight: 700; }
+.tut-motion { display: block; margin: 0 auto; }
+.tm-str { stroke: #c3b48e; stroke-width: 1; }
+.tm-str.hit { stroke: var(--ink); stroke-width: 1.8; }
+.tm-num { font-size: 8px; fill: #8a7a5e; }
+.tm-arrow { stroke: var(--accent); stroke-width: 2; }
+.tm-head { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.tm-finger { fill: var(--accent); }
+.tm-label { font-size: 11px; fill: var(--accent-dark); font-weight: 700; }
+.tm-side { font-size: 9px; fill: #8a7a5e; }
+
+/* ── 打印：只印谱面 ── */
+@media print {
+  header, .tabs, footer, .btn-row, .note, .warn, .card:not(.score-card) { display: none !important; }
+  body { background: #fff; max-width: none; }
+  .card { border: none; box-shadow: none; }
+  .score { border: none; background: #fff; }
+}
+
+.note { font-size: .85rem; color: #8a7a5e; margin-top: 8px; }
+.warn { color: var(--red); font-size: .9rem; }
+ul { padding-left: 1.3em; }
+li { margin-bottom: 6px; }
+footer { text-align: center; color: #a89877; font-size: .85rem; margin-top: 24px; letter-spacing: .1em; }
+
+@media (max-width: 560px) {
+  h1 { font-size: 1.6rem; }
+  .form-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── 走音真弧线层 + 三连音 + 反复记号 ── */
+.duipu { position: relative; }
+.arc-layer { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.arc-path { fill: none; stroke: var(--accent-dark); stroke-width: 1.4; }
+.arc-head { fill: var(--accent-dark); }
+.dp-jp { position: relative; }
+.trip3 { font-style: normal; position: absolute; top: -13px; left: 50%; transform: translateX(-50%); font-size: .72rem; font-weight: 700; color: var(--accent-dark); }
+.rep-dots { font-weight: 900; font-size: 1.1rem; align-self: center; }
+/* 简省弦号（连续同指法散音） */
+.jz-abbr { display: flex; align-items: center; min-height: 52px; padding: 0 6px; }
+.abbr-num { font-size: 1.45rem; font-weight: 600; font-family: "Songti SC", serif; }
