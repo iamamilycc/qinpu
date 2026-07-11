@@ -758,6 +758,24 @@
     convertJianpu();
   };
 
+
+  /* ══════════ 打印/存PDF：弹出独立打印页（兼容微信等 window.print 无效的环境）══════════ */
+  window.printScore = function (which) {
+    var el = $(which === 'A' ? 'scoreA' : 'scoreB');
+    if (!el || !el.querySelector('.duipu')) { alert('谱面还是空的，先生成谱再打印。'); return; }
+    var w = window.open('', '_blank');
+    if (!w) { alert('浏览器拦截了弹窗。请允许本站弹窗后重试；微信内请点右上角「在浏览器打开」。'); return; }
+    var href = document.querySelector('link[rel="stylesheet"]').href;
+    w.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">' +
+      '<title>琴谱通 · 打印</title><link rel="stylesheet" href="' + href + '">' +
+      '<style>body{background:#fff;max-width:none;padding:20px}.jz-cell{cursor:default}</style>' +
+      '</head><body>' + el.innerHTML +
+      '<p style="text-align:center;color:#a89877;font-size:12px">琴谱通 iamamilycc.github.io/qinpu</p>' +
+      '</body></html>');
+    w.document.close();
+    setTimeout(function () { try { w.print(); } catch (e) { /* 用户可手动 Cmd+P */ } }, 500);
+  };
+
   /* ══════════ 试听（模拟古琴拨弦）══════════ */
   var SPB = 60 / 56; // ♩=56，琴曲宜缓
 
