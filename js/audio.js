@@ -216,19 +216,19 @@
     orns = orns || [];
     function has(o) { return orns.indexOf(o) >= 0; }
     var t0 = when + 0.25;
-    if (has('绰')) frictionAt(when - 0.02, 0.22, 1, 0.025);
-    if (has('注')) frictionAt(when - 0.02, 0.22, -1, 0.025);
-    if (has('上')) frictionAt(t0, 0.35, 1, 0.028);
-    if (has('下')) frictionAt(t0, 0.35, -1, 0.028);
-    if (has('进复')) { frictionAt(t0, 0.22, 1, 0.025); frictionAt(t0 + 0.36, 0.2, -1, 0.022); }
-    if (has('退复')) { frictionAt(t0, 0.22, -1, 0.025); frictionAt(t0 + 0.36, 0.2, 1, 0.022); }
-    if (has('撞')) frictionAt(t0, 0.16, 1, 0.022);
-    if (has('双撞')) { frictionAt(t0, 0.15, 1, 0.022); frictionAt(t0 + 0.14, 0.15, 1, 0.02); }
-    if (has('唤')) frictionAt(t0, 0.4, -1, 0.025);
-    if (has('逗')) frictionAt(when + 0.04, 0.12, 1, 0.02);
-    if (has('往来')) { frictionAt(t0, 0.5, 1, 0.022); frictionAt(t0 + 0.55, 0.5, -1, 0.022); frictionAt(t0 + 1.1, 0.4, 1, 0.02); }
-    if (has('淌')) frictionAt(t0, 0.9, -1, 0.025);
-    if (has('猱')) frictionAt(t0, 1.0, 0, 0.014); // 阔颤的轻微揉弦沙沙
+    if (has('绰')) frictionAt(when - 0.02, 0.36, 1, 0.013);
+    if (has('注')) frictionAt(when - 0.02, 0.36, -1, 0.013);
+    if (has('上')) frictionAt(t0, 0.55, 1, 0.014);
+    if (has('下')) frictionAt(t0, 0.55, -1, 0.014);
+    if (has('进复')) { frictionAt(t0, 0.34, 1, 0.013); frictionAt(t0 + 0.36, 0.32, -1, 0.011); }
+    if (has('退复')) { frictionAt(t0, 0.34, -1, 0.013); frictionAt(t0 + 0.36, 0.32, 1, 0.011); }
+    if (has('撞')) frictionAt(t0, 0.26, 1, 0.011);
+    if (has('双撞')) { frictionAt(t0, 0.24, 1, 0.011); frictionAt(t0 + 0.14, 0.24, 1, 0.01); }
+    if (has('唤')) frictionAt(t0, 0.6, -1, 0.013);
+    if (has('逗')) frictionAt(when + 0.04, 0.2, 1, 0.01);
+    if (has('往来')) { frictionAt(t0, 0.7, 1, 0.011); frictionAt(t0 + 0.55, 0.7, -1, 0.011); frictionAt(t0 + 1.1, 0.6, 1, 0.01); }
+    if (has('淌')) frictionAt(t0, 1.3, -1, 0.013);
+    if (has('猱')) frictionAt(t0, 1.4, 0, 0.007); // 阔颤的轻微揉弦沙沙
   }
 
   /* ── 指法音色族（琴学物理：向内指肉多→温厚；向外指甲触弦→清亮）── */
@@ -322,7 +322,7 @@
       g.gain.setValueAtTime(Math.min(lvl / 0.88, chain.vol), Math.max(when, wWhen - 0.02));
       g.gain.linearRampToValueAtTime(lvl * 0.88, wWhen + slide * 0.5);
       g.gain.linearRampToValueAtTime(lvl, wWhen + slide);
-      frictionAt(wWhen - 0.02, slide + 0.08, nr > curRate ? 1 : -1, 0.028);
+      frictionAt(wWhen - 0.02, slide + 0.22, nr > curRate ? 1 : -1, 0.014);
       curRate = nr; if (nr > maxRate) maxRate = nr;
       lastWhen = wWhen;
     });

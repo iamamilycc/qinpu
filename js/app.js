@@ -511,6 +511,10 @@
         var vel = atBarStart ? 1.0 : (unit === 0.5 && gi % 2 === 1) ? 0.42 : (unit === 0.5 ? 0.58 : 0.7);
         if ((tk.dotted && gi === tk.group.length - 1) && !atBarStart) vel = Math.max(vel, 0.9);
         atBarStart = false;
+        var refPeek = tk.refs[gi];
+        if (refPeek !== -1 && notesB[refPeek] && notesB[refPeek].trip !== undefined) {
+          vel = 0.48 + 0.06 * notesB[refPeek].trip; // 轮：三声连续短而轻，微渐强
+        }
         var ref = tk.refs[gi];
         if (ref !== -1) {
           var it = notesB[ref];
