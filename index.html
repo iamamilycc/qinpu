@@ -10,7 +10,14 @@
 <body>
 <header>
   <h1>琴谱通</h1>
-  <p class="sub">古琴减字谱 ⇄ 简谱 · 双向转换 <span class="tag">正调 1=F</span></p>
+  <p class="sub">古琴减字谱 ⇄ 简谱 · 双向转换
+    <select id="selTuning" class="tuning-sel" title="调弦法">
+      <option value="zheng" selected>正调 1=F</option>
+      <option value="ruibin">蕤宾调·紧五 1=♭B</option>
+      <option value="manjiao">慢角调·慢三 1=C</option>
+      <option value="manshang">慢商调·慢二 1=F</option>
+      <option value="huangzhong">黄钟调·慢一紧五 1=♭B</option>
+    </select></p>
 </header>
 
 <nav class="tabs">
@@ -238,7 +245,7 @@
       <li><b>指法编配</b>：简谱→减字谱按琴人惯例自动编配——散按结合就近取位、低弦勾高弦挑、重复音勾剔/抹挑交替、小节头低弦散音用托、句尾长音用撮、按音上行加绰下行加注、长音加吟、高音恰逢泛音位则取泛音。仍只是<b>一种</b>参考弹法，不是唯一答案，更不能替代老师；点击任一减字可弹出全部弹法菜单选择。</li>
       <li><b>徽分</b>：按十二平均律计算到「徽分」（相邻两徽十等分），实际演奏以耳定音。</li>
       <li><b>字形</b>：部分减字省文（挑、剔、摘、擘等）字形尚在校对中，暂以全字或近似部件显示。</li>
-      <li><b>定弦</b>：目前只支持正调（1=F，一至七弦 = 低5 低6 1 2 3 5 6），其他调弦陆续添加。</li>
+      <li><b>定弦</b>：支持五种调弦法——正调、蕤宾调（紧五）、慢角调（慢三）、慢商调（慢二·广陵散）、黄钟调（慢一紧五），页顶下拉切换，全站（转换/五线谱调号/试听）联动。示例曲为正调。凄凉调等各谱系定弦记载有出入，暂缓。</li>
       <li><b>五线谱行</b>：简化版（低音谱表、F大调）——音高、符桿、八分符杠、附点齐全；三连音、延音线、装饰音记号暂未绘制。</li>
       <li><b>试听音色</b>：默认使用<b>真古琴空弦采样</b>（RafaelCaro 录制，<a href="https://freesound.org/people/RafaelCaro/sounds/176266/" target="_blank">freesound.org #176266</a>，CC-BY 4.0 授权，实测音准与标准正调偏差≤13音分）——空弦音即原声，按音/泛音由最近的空弦采样变调而来，把位越高音色越偏亮；采样解码失败时自动退回合成音。节奏按记谱直译（♩=56），仅供校对音高。</li>
     </ul>

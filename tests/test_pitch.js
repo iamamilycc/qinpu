@@ -66,5 +66,21 @@ mel.forEach(function (n) {
 });
 eq('11音旋律往返零误差', roundtripOK, true);
 
+
+// ── 调弦法 ──
+P.setTuning('ruibin');   // 紧五：五弦 A→Bb，1=bB
+eq('蕤宾五弦散音=1(bB)', P.semitoneToJianpu(P.sanSemitone(5)).text, '1');
+eq('蕤宾三弦散音=低5(F)', P.semitoneToJianpu(P.sanSemitone(3)).text, '5,');
+P.setTuning('manjiao');  // 慢三：三弦 F→E，1=C
+eq('慢角三弦散音=3(E)', P.semitoneToJianpu(P.sanSemitone(3)).text, '3');
+eq('慢角一弦散音=1(C)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1');
+P.setTuning('huangzhong'); // 慢一紧五：一弦 C→Bb,
+eq('黄钟一弦散音=低1(bB,)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1,');
+P.setTuning('manshang'); // 慢二：二弦=一弦同音
+eq('慢商一二弦同音', P.sanSemitone(1) === P.sanSemitone(2), true);
+P.setTuning('zheng');    // 还原
+eq('还原正调三弦=1(F)', P.semitoneToJianpu(P.sanSemitone(3)).text, '1');
+
 console.log(fails === 0 ? '\nALL PASS' : '\n' + fails + ' FAILED');
 process.exit(fails === 0 ? 0 : 1);
+

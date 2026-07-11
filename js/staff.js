@@ -14,12 +14,25 @@
   var VB_Y = -16, VB_H = 100;       // viewBox 纵向范围
   var G2_IDX = 2 * 7 + 4;           // 底线 G2 的音级序号 (oct*7+letter)
 
-  // 半音 pc → [字母序号 C0..B6, 变音记号]；F 大调（调号 bB，Bb 不再标记号）
-  var SPELL = [
-    [0, ''], [0, '#'], [1, ''], [2, 'b'], [2, ''], [3, ''],
-    [3, '#'], [4, ''], [4, '#'], [5, ''], [6, 'inkey'], [6, 'n']
-  ];
+  // 调号（降号 pc 列表，随调弦法由 setKey 更新；默认 F 大调 = [Bb]）
+  var KEY_FLATS = [10];
+  function setKey(flats) { KEY_FLATS = flats || []; }
+  function inKey(pc) { return KEY_FLATS.indexOf(pc) >= 0; }
+
+  var NAT = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };  // 自然音 pc→字母
+  var FLAT = { 1: 1, 3: 2, 6: 4, 8: 5, 10: 6 };              // 降号拼写 pc→字母
   var ACC_GLYPH = { '#': '♯', 'b': '♭', 'n': '♮' };
+
+  // pc → [字母序号, 变音记号]（按降号体系拼写，调号内不标）
+  function spellPc(pc) {
+    if (inKey(pc)) return [FLAT[pc], ''];
+    if (NAT[pc] !== undefined) {
+      // 自然音，但其降半音在调号内（如 Bb 调里的 E）→ 需还原记号
+      if (inKey((pc + 11) % 12)) return [NAT[pc], 'n'];
+      return [NAT[pc], ''];
+    }
+    return [FLAT[pc], 'b'];
+  }
 
   function yOf(idx) { return BOT - (idx - G2_IDX) * HALF; }
 
@@ -27,9 +40,9 @@
   function pos(semi) {
     var midi = 36 + Math.round(semi);
     var oct = Math.floor(midi / 12) - 1;
-    var sp = SPELL[((midi % 12) + 12) % 12];
+    var sp = spellPc(((midi % 12) + 12) % 12);
     var idx = oct * 7 + sp[0];
-    return { y: yOf(idx), idx: idx, acc: (sp[1] === 'inkey' ? '' : sp[1]) };
+    return { y: yOf(idx), idx: idx, acc: sp[1] };
   }
 
   function lines(w) {
@@ -107,13 +120,16 @@
     return s + '</svg>';
   }
 
-  /* 谱号+调号格（乐谱开头）：低音谱号 𝄢 + F大调 bB */
+  /* 谱号+调号格（乐谱开头）：低音谱号 𝄢 + 当前调的降号 */
+  var FLAT_POS = { 10: 20, 3: 23, 8: 19, 1: 22 }; // pc → 低音谱表音级序号
   function clefCell() {
-    var w = 46;
-    return svgOpen(w) + lines(w) +
-      '<text x="14" y="52" class="st-clef">𝄢</text>' +
-      '<text x="34" y="' + (yOf(G2_IDX + 2) + 3) + '" class="st-acc">♭</text>' +
-      '</svg>';
+    var w = 36 + KEY_FLATS.length * 9 + (KEY_FLATS.length ? 2 : 0);
+    var s = svgOpen(w) + lines(w) + '<text x="14" y="52" class="st-clef">𝄢</text>';
+    KEY_FLATS.forEach(function (pc, i) {
+      var idx = FLAT_POS[pc];
+      if (idx !== undefined) s += '<text x="' + (33 + i * 9) + '" y="' + (yOf(idx) + 3) + '" class="st-acc">♭</text>';
+    });
+    return s + '</svg>';
   }
 
   /* 拍号格 */
@@ -145,7 +161,7 @@
       (rest ? '<text x="13" y="50" class="st-rest">𝄽</text>' : '') + '</svg>';
   }
 
-  var API = { cell: cell, clefCell: clefCell, timeCell: timeCell, barCell: barCell, padCell: padCell, pos: pos };
+  var API = { cell: cell, clefCell: clefCell, timeCell: timeCell, barCell: barCell, padCell: padCell, pos: pos, setKey: setKey };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else global.QinStaff = API;
 })(typeof window !== 'undefined' ? window : this);

@@ -725,6 +725,14 @@
     ORN_IDS.forEach(function (o) {
       var el = $('orn' + o); if (el) el.addEventListener('change', updatePreview);
     });
+    // 调弦法切换：音律/五线谱调号/两个方向的谱面全部联动
+    $('selTuning').addEventListener('change', function () {
+      P.setTuning(this.value);
+      S.setKey(P.tuning().flats);
+      updatePreview();
+      renderScoreA();
+      if (tokensB.length) convertJianpu(); // 重新编配（定弦变了，弹法全变）
+    });
     updatePreview();
     renderScoreA();
     renderScoreB();

@@ -197,3 +197,6 @@ footer { text-align: center; color: #a89877; font-size: .85rem; margin-top: 24px
 /* 简省弦号（连续同指法散音） */
 .jz-abbr { display: flex; align-items: center; min-height: 52px; padding: 0 6px; }
 .abbr-num { font-size: 1.45rem; font-weight: 600; font-family: "Songti SC", serif; }
+
+/* 调弦法下拉 */
+.tuning-sel { font-family: inherit; font-size: .82rem; padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--accent-dark); margin-left: 6px; }

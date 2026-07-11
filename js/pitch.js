@@ -13,9 +13,29 @@
 (function (global) {
   'use strict';
 
-  // 各弦散音（相对一弦 C 的半音数），下标 0..6 = 一弦..七弦
-  var OPEN = [0, 2, 5, 7, 9, 12, 14];
-  var F_OFFSET = 5; // 1=F：F 比一弦 C 高 5 个半音
+  // ── 调弦法（各弦散音相对正调一弦 C 的半音数；key=简谱"1"的音高）──
+  var TUNINGS = {
+    zheng:      { name: '正调 1=F',           open: [0, 2, 5, 7, 9, 12, 14],   key: 5,  flats: [10] },
+    ruibin:     { name: '蕤宾调·紧五 1=♭B',   open: [0, 2, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] },
+    manjiao:    { name: '慢角调·慢三 1=C',    open: [0, 2, 4, 7, 9, 12, 14],   key: 0,  flats: [] },
+    manshang:   { name: '慢商调·慢二 1=F',    open: [0, 0, 5, 7, 9, 12, 14],   key: 5,  flats: [10] },
+    huangzhong: { name: '黄钟调·慢一紧五 1=♭B', open: [-2, 2, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] }
+  };
+  var CUR_TUNING = 'zheng';
+
+  // 各弦散音（随调弦法变化），下标 0..6 = 一弦..七弦
+  var OPEN = TUNINGS.zheng.open.slice();
+  var F_OFFSET = 5; // 简谱"1"相对一弦 C 的半音数（随调弦法变化）
+
+  function setTuning(id) {
+    var t = TUNINGS[id];
+    if (!t) return false;
+    CUR_TUNING = id;
+    for (var i = 0; i < 7; i++) OPEN[i] = t.open[i];
+    F_OFFSET = t.key;
+    return true;
+  }
+  function tuning() { return TUNINGS[CUR_TUNING]; }
 
   // 徽位分数（自岳山），下标 1..13
   var HUI_FRAC = [null,
@@ -156,6 +176,7 @@
 
   var API = {
     OPEN: OPEN, HUI_FRAC: HUI_FRAC, FAN_MULT: FAN_MULT,
+    TUNINGS: TUNINGS, setTuning: setTuning, tuning: tuning,
     sanSemitone: sanSemitone, anSemitone: anSemitone, fanSemitone: fanSemitone,
     semitoneToJianpu: semitoneToJianpu, jianpuToSemitone: jianpuToSemitone,
     findPosition: findPosition, candidatesFor: candidatesFor,
