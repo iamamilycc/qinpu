@@ -110,11 +110,11 @@
     var strGlyph = NUM[note.string] || '?';
     if (rGlyph === '勹') {
       // 勹包住弦号
-      parts.push(text(50, 62, 56, '勹'));
-      parts.push(text(53, 76, 25, strGlyph));
+      parts.push(text(50, 56, 50, '勹'));
+      parts.push(text(51, 88, 24, strGlyph)); // 弦号在勹下方完整露出
     } else {
       parts.push(text(50, 55, rGlyph.length > 1 ? 28 : 44, rGlyph));
-      parts.push(text(50, 94, strGlyph.length > 1 ? 19 : 27, strGlyph));
+      parts.push(text(50, 92, strGlyph.length > 1 ? 19 : 26, strGlyph));
     }
 
     // ── 走音/装饰：右侧竖排小字（多字的缩小） ──
