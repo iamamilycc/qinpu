@@ -200,3 +200,12 @@ footer { text-align: center; color: #a89877; font-size: .85rem; margin-top: 24px
 
 /* 调弦法下拉 */
 .tuning-sel { font-family: inherit; font-size: .82rem; padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--accent-dark); margin-left: 6px; }
+/* 自定义弹法编辑器 */
+.cust-editor { min-width: 300px; max-width: 360px; }
+.cust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 6px; }
+.cust-grid label { display: flex; flex-direction: column; font-size: .78rem; color: #6d5f47; gap: 2px; }
+.cust-grid select { font-size: .88rem; padding: 4px; }
+.cust-orns { font-size: .85rem; padding: 4px 6px; color: #6d5f47; }
+.cust-pv { display: flex; align-items: center; gap: 10px; background: var(--paper); border-radius: 7px; padding: 6px; margin: 4px 6px; }
+.cust-pv .pv-info { font-size: .82rem; }
+.cand-add { color: var(--accent-dark); font-weight: 700; border-top: 1px dashed var(--line); margin-top: 4px; }

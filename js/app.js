@@ -202,6 +202,16 @@
   function computePerform() {
     var prev = null, prevSemi = null, prevType = null, prevString = null, walkChain = 0;
     notesB.forEach(function (it) {
+      // 用户自定义弹法：全盘尊重，不做任何自动分配
+      if (it.custom) {
+        it.walk = null; it.walkAvail = null;
+        it.right = it.custom.right; it.orn = it.custom.orn || [];
+        prevType = it.custom.type; prevString = it.custom.string;
+        prevSemi = P.noteSemitone(it.custom);
+        prev = { string: it.custom.string, right: it.custom.right };
+        walkChain = 0;
+        return;
+      }
       var c = it.cands[it.pick];
       var target = P.jianpuToSemitone(it.src.deg, it.src.sharp, it.src.oct);
       // ── 走音判定（古琴"一弹多音"）：上一音是同弦按音/走音，音程≤大三度
@@ -267,8 +277,105 @@
   }
 
   /* 点击减字 → 弹出全部弹法菜单供选择 */
-  function closeCandMenu() { var m = $('candMenu'); if (m) m.remove(); }
+  function closeCandMenu() {
+    var m = $('candMenu'); if (m) m.remove();
+    var e2 = $('custEditor'); if (e2) e2.remove();
+  }
   document.addEventListener('click', closeCandMenu);
+
+  /* ══════════ 自定义弹法编辑器 ══════════
+   * 候选弹法都不合意时，用户自己拼一个（含音高校验，不符也可保存）*/
+  var CUST_ORNS = ['绰', '注', '吟', '猱', '上', '下'];
+  window.showCustomEditor = function (ref, anchorRect) {
+    closeCandMenu();
+    var it = notesB[ref];
+    var target = P.jianpuToSemitone(it.src.deg, it.src.sharp, it.src.oct);
+    var cur = it.custom || null;
+    var box = document.createElement('div');
+    box.id = 'custEditor'; box.className = 'cand-menu cust-editor';
+    box.onclick = function (e) { e.stopPropagation(); };
+    var rightOpts = Object.keys(J.RIGHT).map(function (r) {
+      return '<option value="' + r + '"' + (cur && cur.right === r ? ' selected' : '') + '>' + r + '</option>';
+    }).join('');
+    var numOpt = function (n, sel) {
+      var o = '';
+      for (var i = 1; i <= n; i++) o += '<option value="' + i + '"' + (i === sel ? ' selected' : '') + '>' + J.NUM[i] + '</option>';
+      return o;
+    };
+    var fenOpt = function (sel) {
+      var o = '<option value="0"' + (!sel ? ' selected' : '') + '>整徽</option>';
+      for (var i = 1; i <= 9; i++) o += '<option value="' + i + '"' + (i === sel ? ' selected' : '') + '>' + J.NUM[i] + '分</option>';
+      return o;
+    };
+    box.innerHTML =
+      '<div class="cand-head">自定义弹法（谱面音：' + jpText(it.src) + '）</div>' +
+      '<div class="cust-grid">' +
+      '<label>音色<select id="custType">' +
+        '<option value="san"' + (cur && cur.type === 'san' ? ' selected' : '') + '>散音</option>' +
+        '<option value="an"' + (!cur || cur.type === 'an' ? ' selected' : '') + '>按音</option>' +
+        '<option value="fan"' + (cur && cur.type === 'fan' ? ' selected' : '') + '>泛音</option></select></label>' +
+      '<label>弦<select id="custStr">' + numOpt(7, cur ? cur.string : 4) + '</select></label>' +
+      '<label>左手<select id="custLeft">' +
+        ['大', '食', '中', '名', '跪'].map(function (l) {
+          var sel = cur ? cur.left === l : l === '名';
+          return '<option' + (sel ? ' selected' : '') + '>' + l + '</option>';
+        }).join('') + '</select></label>' +
+      '<label>徽位<select id="custHui">' + numOpt(13, cur && cur.hui ? cur.hui : 9) + '</select></label>' +
+      '<label>徽分<select id="custFen">' + fenOpt(cur ? cur.fen : 0) + '</select></label>' +
+      '<label>右手<select id="custRight">' + rightOpts + '</select></label>' +
+      '</div>' +
+      '<div class="cust-orns">走音：' + CUST_ORNS.map(function (o) {
+        var ck = cur && cur.orn && cur.orn.indexOf(o) >= 0 ? ' checked' : '';
+        return '<label class="chk"><input type="checkbox" class="custOrn" value="' + o + '"' + ck + '>' + o + '</label>';
+      }).join('') + '</div>' +
+      '<div id="custPv" class="cust-pv"></div>' +
+      '<div class="btn-row" style="margin-top:6px">' +
+      '<button class="primary" id="custSave">✔ 使用此弹法</button>' +
+      (it.custom ? '<button id="custClear">↩ 恢复自动</button>' : '') +
+      '<button id="custCancel">取消</button></div>';
+    document.body.appendChild(box);
+    box.style.left = Math.max(6, Math.min(window.innerWidth - box.offsetWidth - 10, anchorRect.left)) + 'px';
+    box.style.top = (anchorRect.bottom + window.scrollY + 4) + 'px';
+
+    function readNote() {
+      var type = $('custType').value;
+      var n = { type: type, string: parseInt($('custStr').value, 10), right: $('custRight').value, orn: [] };
+      if (type !== 'san') {
+        n.left = $('custLeft').value;
+        n.hui = parseInt($('custHui').value, 10);
+        n.fen = type === 'fan' ? 0 : parseInt($('custFen').value, 10);
+      }
+      box.querySelectorAll('.custOrn:checked').forEach(function (c) { n.orn.push(c.value); });
+      return n;
+    }
+    function refresh() {
+      var n = readNote();
+      var sm = P.noteSemitone(n);
+      var ok = (sm !== null && !isNaN(sm));
+      var match = ok && Math.abs(Math.round(sm) - target) < 0.5;
+      $('custPv').innerHTML = J.render(n, 58) + '<div class="pv-info">' + J.label(n) +
+        (ok ? (match ? '　<b style="color:#2c7a2c">✓ 音高相符</b>'
+                     : '　<b class="warn">⚠ 音高不符（差 ' + (Math.round(sm) - target) + ' 半音）</b>')
+            : '　<b class="warn">⚠ 此位置无法发音</b>') + '</div>';
+      var isSan = $('custType').value === 'san';
+      $('custLeft').disabled = isSan; $('custHui').disabled = isSan;
+      $('custFen').disabled = isSan || $('custType').value === 'fan';
+    }
+    box.querySelectorAll('select,.custOrn').forEach(function (el) { el.addEventListener('change', refresh); });
+    refresh();
+    $('custSave').onclick = function (e) {
+      e.stopPropagation();
+      var n = readNote();
+      var sm = P.noteSemitone(n);
+      if (sm === null || isNaN(sm)) { alert('此弦徽组合无法发音，请调整。'); return; }
+      it.custom = n; it.noWalk = true;
+      closeCandMenu(); renderScoreB();
+      window.QinAudio.playSeq([{ t: 0, semi: sm, col: null, orn: n.orn, right: n.right, ntype: n.type }], null);
+    };
+    var cc = $('custClear');
+    if (cc) cc.onclick = function (e) { e.stopPropagation(); it.custom = null; it.noWalk = false; closeCandMenu(); renderScoreB(); };
+    $('custCancel').onclick = function (e) { e.stopPropagation(); closeCandMenu(); };
+  };
 
   window.showCands = function (ref, ev) {
     ev.stopPropagation();
@@ -299,7 +406,7 @@
     it.cands.forEach(function (c, i) {
       var note = candToNote(c, it.right, it.orn);
       var d = document.createElement('div');
-      var isCur = (i === it.pick && !it.walk);
+      var isCur = (i === it.pick && !it.walk && !it.custom);
       d.className = 'cand-item' + (isCur ? ' sel' : '');
       d.innerHTML = J.render(note, 38, { bare: true }) +
         '<span>' + J.label(note) + (isCur ? '　✓ 当前' : '') + '</span>';
@@ -307,6 +414,7 @@
         e.stopPropagation();
         it.pick = i;
         it.noWalk = true; // 明确选了拨弦弹法 → 不再自动走音
+        it.custom = null; // 选回候选即清除自定义
         closeCandMenu();
         renderScoreB(); // 重排会按新弹法重算全谱指法惯例
         var pn = candToNote(it.cands[i]);
@@ -314,6 +422,24 @@
       };
       menu.appendChild(d);
     });
+    // 已有自定义 → 显示为当前项
+    if (it.custom) {
+      var cd = document.createElement('div');
+      cd.className = 'cand-item sel';
+      cd.innerHTML = J.render(it.custom, 38, { bare: true }) +
+        '<span>' + J.label(it.custom) + '（自定义）　✓ 当前</span>';
+      var _r0 = null;
+      cd.onclick = function (e) { e.stopPropagation(); window.showCustomEditor(ref, _rectOf()); };
+      menu.appendChild(cd);
+    }
+    // 底部：自定义入口
+    var add = document.createElement('div');
+    add.className = 'cand-item cand-add';
+    add.innerHTML = '<span>➕ 都不合适？自定义弹法…</span>';
+    var _anchor = ev.currentTarget.getBoundingClientRect();
+    function _rectOf() { return _anchor; }
+    add.onclick = function (e) { e.stopPropagation(); window.showCustomEditor(ref, _anchor); };
+    menu.appendChild(add);
     document.body.appendChild(menu);
     var r = ev.currentTarget.getBoundingClientRect();
     menu.style.left = Math.max(6, Math.min(window.innerWidth - menu.offsetWidth - 10, r.left)) + 'px';
@@ -393,7 +519,10 @@
             var it = notesB[ref];
             var c = it.cands[it.pick];
             var note;
-            if (it.walk) {
+            if (it.custom) {
+              note = it.custom;
+              stn.push({ semi: P.noteSemitone(note), dotted: t.dotted && lastInGroup });
+            } else if (it.walk) {
               note = { type: 'walk', dir: it.walk.dir, string: it.walk.string, hui: it.walk.hui, fen: it.walk.fen };
               stn.push({ semi: P.anSemitone(it.walk.string, it.walk.hui, it.walk.fen), dotted: t.dotted && lastInGroup });
             } else {
@@ -402,7 +531,7 @@
               stn.push({ semi: P.noteSemitone(note), dotted: t.dotted && lastInGroup });
             }
             jpRow += jpNoteHtml(n, t.dotted && lastInGroup, jpPre(it), !it.walk && c.type === 'fan');
-            var tip = J.label(note) + '（点击查看全部弹法）';
+            var tip = J.label(note) + (it.custom ? '（自定义弹法，点击可改）' : '（点击查看全部弹法）');
             // 谱书简省：连续同指法的散音（无走音无装饰）→ 只写弦号
             var plainSan = !it.walk && note.type === 'san' && (!note.orn || !note.orn.length) && !note.fanMark;
             if (plainSan && prevPk && prevPk.right === note.right) {
@@ -518,7 +647,11 @@
         var ref = tk.refs[gi];
         if (ref !== -1) {
           var it = notesB[ref];
-          if (it.walk) { // 走音：从上一音滑过去，不重新拨弦
+          if (it.custom) {
+            var cs = P.noteSemitone(it.custom);
+            ev.push({ t: t, semi: cs, col: col, orn: it.custom.orn || [], dur: dur, str: it.custom.string, vel: vel, right: it.custom.right, ntype: it.custom.type });
+            lastSemi = cs;
+          } else if (it.walk) { // 走音：从上一音滑过去，不重新拨弦
             var ws = P.anSemitone(it.walk.string, it.walk.hui, it.walk.fen);
             ev.push({ t: t, semi: ws, col: col, orn: [], glideFrom: lastSemi, dur: dur, str: it.walk.string, vel: vel });
             lastSemi = ws;
