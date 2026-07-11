@@ -177,7 +177,7 @@ button { font-family: inherit; }
 
 .note { font-size: .85rem; color: #8a7a5e; margin-top: 8px; }
 .warn { color: var(--red); font-size: .9rem; }
-ul { padding-left: 1.3em; }
+ul, ol { padding-left: 1.5em; }
 li { margin-bottom: 6px; }
 footer { text-align: center; color: #a89877; font-size: .85rem; margin-top: 24px; letter-spacing: .1em; }
 
