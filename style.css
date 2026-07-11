@@ -213,3 +213,16 @@ footer { text-align: center; color: #a89877; font-size: .85rem; margin-top: 24px
 .dp-jp.beam16 { box-shadow: 0 3px 0 0 var(--card), 0 4.6px 0 0 var(--ink); }
 .jp-tempo { font-size: .85rem; font-weight: 700; color: var(--accent-dark); align-self: center; }
 .ferm { font-style: normal; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: .95rem; color: var(--accent-dark); }
+/* 倚音 / 1房2房 / 连音线 */
+.grace { font-style: normal; font-size: .68em; align-self: flex-start; margin-right: 1px; color: var(--ink); border-bottom: 1px solid var(--ink); }
+.jz-grace { align-self: center; opacity: .8; }
+.volta-chip { font-size: .8rem; font-weight: 700; border: 1.5px solid var(--ink); border-bottom: none; border-right: none; padding: 1px 10px 8px 4px; align-self: flex-start; }
+.arc-tie { stroke: var(--ink); stroke-width: 1.2; opacity: .8; }
+/* 手机端：表单字号≥16px 防 iOS 聚焦自动放大；谱面横向内滚 */
+html { -webkit-text-size-adjust: 100%; }
+.score { overflow-x: auto; }
+@media (max-width: 600px) {
+  select, textarea, input, button { font-size: 16px !important; }
+  .tabs button { font-size: .88rem; padding: 8px 2px; }
+  .tuning-sel { font-size: 14px !important; }
+}

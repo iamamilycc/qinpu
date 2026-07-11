@@ -30,7 +30,16 @@
 <!-- ══════════ 方向一：减字谱 → 简谱 ══════════ -->
 <main id="panel-j2p" class="panel">
   <section class="card">
-    <h2>① 拼一个减字</h2>
+    <h2>① 粘贴文字减字谱（琴人口述格式）</h2>
+    <textarea id="jzTextIn" rows="2" placeholder="例：散勾一 勾二 挑三 | 名九挑四 上七六 大七六托五 泛七挑一"></textarea>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="primary" onclick="parseJzText()">📜 解析生成简谱</button>
+    </div>
+    <p id="jzTextMsg" class="note"></p>
+    <p class="note">写法：<b>名九挑四</b>=名指九徽挑四弦　<b>大七六托五</b>=大指七徽六分托五弦　<b>散勾一</b>=空弦勾一弦　<b>泛七挑一</b>=七徽泛音　<b>上九/下七六</b>=走音　裸弦号（二 三）=沿用上一指法　尾缀<b>绰注吟猱</b>=走音装饰　<b>|</b>=小节线。不会写？用下面的点选拼字↓</p>
+  </section>
+  <section class="card">
+    <h2>①之二 或：点选拼一个减字</h2>
     <div class="form-grid">
       <label>音色
         <select id="selType">
@@ -160,7 +169,7 @@
   <section class="card">
     <h2>① 输入简谱旋律</h2>
     <textarea id="inJianpu" rows="3" placeholder="例：2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3"></textarea>
-    <p class="note">记法：<b>|</b> 小节线　<b>2/4</b> 拍号　<b>1.</b> 附点　<b>-</b> 延音　<b>0</b> 休止　<b>1'</b> 高八度　<b>1,</b> 低八度　<b>#4</b> 升半音　<b>连写 12</b> = 八分音符组　<b>b3</b> 降半音　<b>6_</b> 单八分　<b>1._</b> 附点八分　<b>2222=</b>/<b>6=</b> 十六分　<b>(555)</b> 三连音　<b>0_ 0=</b> 短休止　<b>5^</b> 延长号　<b>T=60</b> 速度　<b>/</b> 换行　<b>|:</b> <b>:|</b> 反复</p>
+    <p class="note">记法：<b>|</b> 小节线　<b>2/4</b> 拍号　<b>1.</b> 附点　<b>-</b> 延音　<b>0</b> 休止　<b>1'</b> 高八度　<b>1,</b> 低八度　<b>#4</b> 升半音　<b>连写 12</b> = 八分音符组　<b>b3</b> 降半音　<b>6_</b> 单八分　<b>1._</b> 附点八分　<b>2222=</b>/<b>6=</b> 十六分　<b>(555)</b> 三连音　<b>0_ 0=</b> 短休止　<b>5^</b> 延长号　<b>T=60</b> 速度　<b>{3}5</b> 倚音　<b>5~ 5</b> 连音线　<b>/</b> 换行　<b>|:</b> <b>:|</b> 反复　<b>[1</b> <b>]</b> <b>[2</b> 一/二房（试听自动按反复顺序展开）</p>
     <div class="btn-row">
       <button class="primary" onclick="convertJianpu()">🎼 转换为减字谱</button>
       <button onclick="loadDemo()">示例：普庵咒</button>

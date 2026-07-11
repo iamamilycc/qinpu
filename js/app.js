@@ -46,6 +46,87 @@
     return note;
   }
 
+
+  /* ══════════ 文字减字谱解析（琴人口述格式，无需API）══════════
+   * 支持："名九挑四" "大七六托五" "散勾一" "泛七挑一" "上九" "下七六"
+   *       裸弦号=沿用上一指法（谱书"勾一 二 三"简省）；| 小节线；
+   *       尾缀走音：绰注吟猱上下 */
+  var CN_NUM = { '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'十二':12,'十三':13 };
+  function cnNum(str) { return CN_NUM[str] || 0; }
+  var RIGHT_NAMES = Object.keys(J.RIGHT).sort(function (a, b) { return b.length - a.length; });
+  var ORN_NAMES = ['绰','注','吟','猱'];
+
+  window.parseJzText = function () {
+    var text = $('jzTextIn').value.trim();
+    if (!text) { alert('请先粘贴文字减字谱，如：散勾一 勾二 挑三 | 名九挑四'); return; }
+    var toks = text.split(/[\s，。、]+/).filter(Boolean);
+    var errs = [], added = 0, prevNote = null;
+    scoreA = [];
+    toks.forEach(function (w0) {
+      var w = w0.replace(/[弦徽指分]/g, '');
+      if (w === '|' || w === '｜') { scoreA.push({ kind: 'bar' }); return; }
+      // 尾缀走音
+      var orn = [];
+      var changed = true;
+      while (changed) {
+        changed = false;
+        ORN_NAMES.forEach(function (o) {
+          if (w.length > 1 && w.slice(-1) === o) { orn.unshift(o); w = w.slice(0, -1); changed = true; }
+        });
+      }
+      // 上/下 + 徽位 = 走音（沿用上一音的弦）
+      var mW = w.match(/^(上|下)(十三|十二|十一|[一二三四五六七八九十])([一二三四五六七八九])?$/);
+      if (mW && prevNote && prevNote.string) {
+        var wn = { type: 'walk', dir: mW[1], string: prevNote.string, hui: cnNum(mW[2]), fen: mW[3] ? cnNum(mW[3]) : 0 };
+        scoreA.push({ kind: 'note', note: wn });
+        prevNote = { string: prevNote.string };
+        added++; return;
+      }
+      // 裸弦号 = 沿用上一指法（散音简省）
+      var mBare = w.match(/^[一二三四五六七]$/);
+      if (mBare && prevNote && prevNote.right) {
+        var bn = { type: prevNote.type || 'san', string: cnNum(w), right: prevNote.right, orn: orn };
+        if (bn.type !== 'san') { bn.left = prevNote.left; bn.hui = prevNote.hui; bn.fen = prevNote.fen; }
+        scoreA.push({ kind: 'note', note: bn });
+        prevNote = bn; added++; return;
+      }
+      // 常规减字：[泛|散]? [大食中名跪]? [徽][分]? [右手] [弦]
+      var fan = /^泛/.test(w); if (fan) w = w.slice(1);
+      var san = /^散/.test(w); if (san) w = w.slice(1);
+      var rIdx = -1, rName = '';
+      for (var i = 0; i < RIGHT_NAMES.length; i++) {
+        var p = w.lastIndexOf(RIGHT_NAMES[i]);
+        if (p > rIdx) { rIdx = p; rName = RIGHT_NAMES[i]; }
+      }
+      if (rIdx < 0) { errs.push(w0); return; }
+      var leftPart = w.slice(0, rIdx);
+      var strPart = w.slice(rIdx + rName.length);
+      var mS = strPart.match(/^(十三|十二|十一|[一二三四五六七])$/);
+      if (!mS) { errs.push(w0); return; }
+      var note = { string: cnNum(mS[1]), right: rName, orn: orn };
+      if (san || leftPart === '') {
+        note.type = fan ? 'fan' : 'san';
+        if (fan) { // 泛+徽："泛七挑一"
+          var mF = leftPart.match(/^(十三|十二|十一|[一二三四五六七八九十])$/);
+          note.hui = mF ? cnNum(mF[1]) : 7; note.fen = 0; note.left = '中';
+        }
+      } else {
+        var mL = leftPart.match(/^(大|食|中|名|跪)?(十三|十二|十一|[一二三四五六七八九十])([一二三四五六七八九])?$/);
+        if (!mL) { errs.push(w0); return; }
+        note.type = fan ? 'fan' : 'an';
+        note.left = mL[1] || (cnNum(mL[2]) >= 9 ? '名' : '大');
+        note.hui = cnNum(mL[2]);
+        note.fen = fan ? 0 : (mL[3] ? cnNum(mL[3]) : 0);
+      }
+      if (P.noteSemitone(note) === null || isNaN(P.noteSemitone(note))) { errs.push(w0 + '(无法发音)'); return; }
+      scoreA.push({ kind: 'note', note: note });
+      prevNote = note; added++;
+    });
+    renderScoreA();
+    $('jzTextMsg').textContent = '已解析 ' + added + ' 个减字' +
+      (errs.length ? '；未识别：' + errs.join('、') : '');
+  };
+
   function noteJianpu(note) {
     var t = P.noteSemitone(note);
     if (t === null || isNaN(t)) return null;
@@ -106,6 +187,7 @@
    *       连写如 12 = 八分音符组（下加横线），每个数字各配一个减字
    */
   var tokensB = [];   // 排版元素流
+  var tieArcs = [];   // 连音线 [fromTi, toTi]
   var notesB = [];    // 扁平音符表 [{cands,pick,src}]，供点击切换
 
   function parseScore(text) {
@@ -116,18 +198,35 @@
       if (w === '|:') { toks.push({ kind: 'bar', rep: 'L' }); return; }
       if (w === ':|') { toks.push({ kind: 'bar', rep: 'R' }); return; }
       if (w === '/') { toks.push({ kind: 'br' }); return; }   // 手动换行
+      if (w === '[1') { toks.push({ kind: 'volta', n: 1 }); return; }  // 1房
+      if (w === '[2') { toks.push({ kind: 'volta', n: 2 }); return; }  // 2房
+      if (w === ']') { toks.push({ kind: 'voltaEnd' }); return; }
       if (/^\d+\/\d+$/.test(w)) { toks.push({ kind: 'time', text: w }); return; }
       if (w === '-') { toks.push({ kind: 'dash' }); return; }
       var mT = w.match(/^(?:T|♩)=(\d+)$/);                       // 速度 T=60
       if (mT) { toks.push({ kind: 'tempo', bpm: parseInt(mT[1], 10) }); return; }
       var mR = w.match(/^0(_|=)?(\.)?$/);                        // 休止 0 / 0_ / 0=
       if (mR) { toks.push({ kind: 'rest', dotted: !!mR[2], unit: mR[1] === '=' ? 0.25 : mR[1] === '_' ? 0.5 : 1 }); return; }
-      // 音符组：连写=八分组；= 十六分；_ 单八分；(555) 三连音；^ 延长号
+      // 音符组：连写=八分组；= 十六分；_ 单八分；(555) 三连音；^ 延长号；
+      // {3}5 倚音；5~ 连音线(与后一同音合并不再触弦)
+      var grace = null;
+      var mG = w.match(/^\{([^}]+)\}(.+)$/);
+      if (mG) {
+        grace = [];
+        var gre = /([#b]?)([1-7])((?:'|,)*)/g, gm;
+        while ((gm = gre.exec(mG[1])) !== null) {
+          var go = 0;
+          for (var gi2 = 0; gi2 < gm[3].length; gi2++) go += (gm[3][gi2] === "'" ? 1 : -1);
+          grace.push({ deg: parseInt(gm[2], 10), sharp: gm[1] === '#' ? 1 : gm[1] === 'b' ? -1 : 0, oct: go });
+        }
+        w = mG[2];
+      }
+      var tie = /~/.test(w);
       var trip = /^\(/.test(w) && /\)/.test(w);
       var ferm = /\^/.test(w);
       var six = /=/.test(w);
       var eighth = /_/.test(w);
-      var w2 = w.replace(/[_()=^]/g, '');
+      var w2 = w.replace(/[_()=^~]/g, '');
       var group = [], re = /([#b]?)([1-7])((?:'|,)*)/g, m;
       var dotted = /\.$/.test(w2);
       while ((m = re.exec(w2)) !== null) {
@@ -138,7 +237,7 @@
       if (group.length) toks.push({
         kind: 'notes', group: group, dotted: dotted,
         beam: group.length > 1, eighth: eighth && group.length === 1,
-        six: six, ferm: ferm,
+        six: six, ferm: ferm, tie: tie, grace: grace,
         triplet: trip && group.length === 3
       });
     });
@@ -152,7 +251,7 @@
     tokensB = toks; notesB = [];
     var prev = null, prevHui = null, failed = [], barJustSeen = true;
     toks.forEach(function (t) {
-      if (t.kind === 'br' || t.kind === 'tempo') return;
+      if (t.kind === 'br' || t.kind === 'tempo' || t.kind === 'volta' || t.kind === 'voltaEnd') return;
       if (t.kind === 'bar' || t.kind === 'time') { barJustSeen = true; return; }
       if (t.kind === 'dash') { // 延音：上一音是长音
         if (notesB.length) notesB[notesB.length - 1].long = true;
@@ -479,6 +578,7 @@
       $('scoreB').innerHTML = '<div class="empty">输入简谱后点「转换」</div>'; return;
     }
     computePerform();
+    tieArcs = []; var lastTieFrom = null;
     // ── 分行（仿谱书按乐句排行）：显式 / 换行；无 / 时每 4 小节自动换行 ──
     var lines = [], cur = [], barCount = 0;
     var hasBr = tokensB.some(function (t) { return t.kind === 'br'; });
@@ -513,12 +613,25 @@
         }
         if (t.kind === 'dash') { html += colHtml('<span class="jp-num">–</span>', S.padCell(false), ''); return; }
         if (t.kind === 'tempo') { html += colHtml('<span class="jp-tempo">♩=' + t.bpm + '</span>', S.padCell(false), ''); return; }
+        if (t.kind === 'volta') { html += colHtml('<span class="volta-chip">' + t.n + '.</span>', S.padCell(false), ''); return; }
+        if (t.kind === 'voltaEnd') { return; }
         if (t.kind === 'rest') {
           var rCls = t.unit === 0.25 ? 'beam beam16' : t.unit === 0.5 ? 'beam' : '';
           html += colHtml('<span class="jp-num">0' + (t.dotted ? '·' : '') + '</span>', S.padCell(true), '', rCls); return;
         }
         // notes 组
         var jpRow = '', jzRow = '', stn = [];
+        if (lastTieFrom !== null) { tieArcs.push([lastTieFrom, ti]); lastTieFrom = null; }
+        if (t.tie) lastTieFrom = ti;
+        // 倚音：简谱小音符 + 自动配的小减字
+        if (t.grace) {
+          t.grace.forEach(function (g) {
+            jpRow += '<i class="grace">' + jpText(g) + '</i>';
+            var gs = P.jianpuToSemitone(g.deg, g.sharp, g.oct);
+            var gc = P.candidatesFor(gs, null);
+            if (gc.length) jzRow += '<span class="jz-grace">' + J.render(candToNote(gc[0]), 24, { bare: true }) + '</span>';
+          });
+        }
         t.group.forEach(function (n, gi) {
           var ref = t.refs[gi];
           var lastInGroup = (gi === t.group.length - 1);
@@ -604,6 +717,21 @@
         }
         if (hasNote) lastNoteJp = jp;
       });
+      // 连音线（同一行内，平弧无箭头）
+      tieArcs.forEach(function (pr) {
+        var c1 = duipu.querySelector('.dp-col[data-col="' + pr[0] + '"]');
+        var c2 = duipu.querySelector('.dp-col[data-col="' + pr[1] + '"]');
+        if (!c1 || !c2) return;
+        var r1 = c1.querySelector('.dp-jp').getBoundingClientRect();
+        var r2 = c2.querySelector('.dp-jp').getBoundingClientRect();
+        var x1 = r1.left + r1.width / 2 - dRect.left;
+        var x2 = r2.left + r2.width / 2 - dRect.left;
+        var y = Math.min(r1.top, r2.top) - dRect.top - 2;
+        var path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', 'M' + x1 + ' ' + y + ' Q' + ((x1 + x2) / 2) + ' ' + (y - Math.min(12, (x2 - x1) * 0.25 + 5)) + ' ' + x2 + ' ' + y);
+        path.setAttribute('class', 'arc-path arc-tie');
+        layer.appendChild(path);
+      });
       duipu.appendChild(layer);
     });
   }
@@ -633,12 +761,35 @@
   /* ══════════ 试听（模拟古琴拨弦）══════════ */
   var SPB = 60 / 56; // ♩=56，琴曲宜缓
 
+  // 反复展开：|: A [1 B :| [2 C → A+B, A+C（无房则 body 两遍）
+  function expandForPlay(toks) {
+    var repL = -1, repR = -1, v1 = -1, v2 = -1;
+    toks.forEach(function (t, i) {
+      if (t.kind === 'bar' && t.rep === 'L' && repL < 0) repL = i;
+      if (t.kind === 'bar' && t.rep === 'R' && repR < 0) repR = i;
+      if (t.kind === 'volta' && t.n === 1 && v1 < 0) v1 = i;
+      if (t.kind === 'volta' && t.n === 2 && v2 < 0) v2 = i;
+    });
+    var pairs = toks.map(function (t, i) { return [t, i]; });
+    if (repR < 0) return pairs;
+    if (repL < 0) repL = 0;
+    if (v1 >= 0 && v2 >= 0) {
+      return pairs.slice(0, repL)
+        .concat(pairs.slice(repL, v1), pairs.slice(v1, repR),
+                pairs.slice(repL, v1), pairs.slice(v2));
+    }
+    return pairs.slice(0, repL)
+      .concat(pairs.slice(repL, repR), pairs.slice(repL, repR), pairs.slice(repR));
+  }
+
   function eventsFromB() {
     var ev = [], t = 0, lastSemi = null, atBarStart = true;
     var spb = SPB; // 可被谱中 T=NN 改变
-    tokensB.forEach(function (tk, ti) {
+    var pendTie = null; // 连音线：待与下一同音合并
+    expandForPlay(tokensB).forEach(function (pair) {
+      var tk = pair[0], ti = pair[1];
       var col = ti + 1; // 第0列是谱号
-      if (tk.kind === 'br') return;
+      if (tk.kind === 'br' || tk.kind === 'volta' || tk.kind === 'voltaEnd') return;
       if (tk.kind === 'tempo') { spb = 60 / tk.bpm; return; }
       if (tk.kind === 'bar' || tk.kind === 'time') { atBarStart = true; return; }
       if (tk.kind === 'rest') { t += (tk.unit || 1) * (tk.dotted ? 1.5 : 1) * spb; return; }
@@ -660,21 +811,36 @@
           vel = 0.48 + 0.06 * notesB[refPeek].trip; // 轮：三声连续短而轻，微渐强
         }
         var ref = tk.refs[gi];
+        // 倚音：主音前抢拍的短小音（各0.11s，轻）
+        if (tk.grace && gi === 0 && ref !== -1) {
+          tk.grace.forEach(function (g, k) {
+            var gs = P.jianpuToSemitone(g.deg, g.sharp, g.oct);
+            var gt = Math.max(0, t - 0.11 * (tk.grace.length - k));
+            ev.push({ t: gt, semi: gs, col: col, orn: [], dur: 0.11, str: 0, vel: 0.45 });
+          });
+        }
         if (ref !== -1) {
           var it = notesB[ref];
+          var evt = null;
           if (it.custom) {
             var cs = P.noteSemitone(it.custom);
-            ev.push({ t: t, semi: cs, col: col, orn: it.custom.orn || [], dur: dur, str: it.custom.string, vel: vel, right: it.custom.right, ntype: it.custom.type });
-            lastSemi = cs;
+            evt = { t: t, semi: cs, col: col, orn: it.custom.orn || [], dur: dur, str: it.custom.string, vel: vel, right: it.custom.right, ntype: it.custom.type };
           } else if (it.walk) { // 走音：从上一音滑过去，不重新拨弦
             var ws = P.anSemitone(it.walk.string, it.walk.hui, it.walk.fen);
-            ev.push({ t: t, semi: ws, col: col, orn: [], glideFrom: lastSemi, dur: dur, str: it.walk.string, vel: vel });
-            lastSemi = ws;
+            evt = { t: t, semi: ws, col: col, orn: [], glideFrom: lastSemi, dur: dur, str: it.walk.string, vel: vel };
           } else {
             var cc = it.cands[it.pick];
             var s = P.noteSemitone(candToNote(cc));
-            ev.push({ t: t, semi: s, col: col, orn: it.orn, dur: dur, str: cc.string, vel: vel, right: it.right, ntype: cc.type });
-            lastSemi = s;
+            evt = { t: t, semi: s, col: col, orn: it.orn, dur: dur, str: cc.string, vel: vel, right: it.right, ntype: cc.type };
+          }
+          // 连音线：与前一同音合并，不再触弦
+          if (pendTie && Math.abs(Math.round(pendTie.semi) - Math.round(evt.semi)) === 0) {
+            pendTie.dur += evt.dur;
+            pendTie = null;
+          } else {
+            ev.push(evt);
+            lastSemi = evt.semi;
+            pendTie = (tk.tie && gi === tk.group.length - 1) ? evt : null;
           }
         }
         t += dur;
