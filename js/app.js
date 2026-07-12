@@ -261,7 +261,11 @@
       t.refs = [];
       t.group.forEach(function (n, gi) {
         var semi = P.jianpuToSemitone(n.deg, n.sharp, n.oct);
-        var cands = P.candidatesFor(semi, prev, { mStart: barJustSeen && gi === 0, prevHui: prevHui });
+        var cands = P.candidatesFor(semi, prev, {
+          mStart: barJustSeen && gi === 0, prevHui: prevHui,
+          profile: ARR_PROFILES[curArrProfile],
+          fast: !!(t.beam || t.six || t.triplet)   // 人体力学：快句手来不及大跳
+        });
         if (cands.length === 0) {
           failed.push(jpText(n));
           t.refs.push(-1);
@@ -290,6 +294,27 @@
       '⚠️ 以下音超出古琴正调音域（标红处）：' + failed.join(' ') : '';
   };
 
+
+  /* ══════════ 编配画像：一首简谱 → 多版减字谱 ══════════
+   * 对应琴学审美的可测代理：宏(广)=散音骨架铺得开；圆=按音走韵连贯；远=泛音清冷+留白 */
+  var ARR_PROFILES = {
+    hong: { name: '宏·散音骨架', san: 0.75, an: 1.25, fan: 1.15, walkMax: 2 },
+    yuan2:{ name: '圆·走韵悠扬', san: 1.25, an: 0.85, fan: 1.05, walkMax: 3 },
+    yuan3:{ name: '远·泛音清冷', san: 1.1,  an: 1.05, fan: 0.5,  walkMax: 2 }
+  };
+  var curArrProfile = 'yuan2';   // 默认：圆
+  var curOrnDensity = 0.6;       // 韵味装饰密度 0.3淡/0.6中/0.9浓
+
+  window.setArrProfile = function (id) {
+    if (!ARR_PROFILES[id]) return;
+    curArrProfile = id;
+    if (tokensB.length) convertJianpu();
+  };
+  window.setOrnDensity = function (v) {
+    curOrnDensity = parseFloat(v);
+    if (tokensB.length) renderScoreB();
+  };
+
   function candToNote(c, right, orn) {
     right = right || (c.string <= 3 ? '勾' : '挑');
     if (c.type === 'san') return { type: 'san', string: c.string, right: right, orn: orn || [] };
@@ -306,6 +331,7 @@
    *  走音：按音上行加绰、下行加注（八分组除外）；附点/延音按音加吟 */
   function computePerform() {
     var prev = null, prevSemi = null, prevType = null, prevString = null, walkChain = 0;
+    var rightRun = { name: '', n: 0 };   // 指法连用计数（防全曲一个指法）
     notesB.forEach(function (it) {
       // 用户自定义弹法：全盘尊重，不做任何自动分配
       if (it.custom) {
@@ -323,7 +349,7 @@
       //    → 本音由左手上/下滑到位，右手不另弹（谱记小字"上/下+徽位"）
       it.walkAvail = null; it.walk = null;
       if (it.trip === undefined && !it.long && !it.final &&
-          (prevType === 'an' || prevType === 'walk') && walkChain < 3 &&
+          (prevType === 'an' || prevType === 'walk') && walkChain < (ARR_PROFILES[curArrProfile].walkMax || 3) &&
           prevSemi !== null && Math.abs(target - prevSemi) <= 4 && Math.abs(target - prevSemi) > 0.01) {
         var wpos = P.findPosition(prevString, target);
         if (wpos && !wpos.waiwei && wpos.hui >= 5) {
@@ -355,15 +381,22 @@
       } else {
         right = c.string <= 3 ? '勾' : '挑';
       }
-      if (c.type === 'an' && !it.beam && prevSemi !== null) {
+      if (c.type === 'an' && !it.beam && prevSemi !== null && curOrnDensity >= 0.4) {
         if (semi > prevSemi + 0.5) orn.push('绰');
         else if (semi < prevSemi - 0.5) orn.push('注');
       }
-      // 韵味装饰：附点长音加吟（细颤），延音大长音加猱（阔颤更悠远）
+      // 韵味装饰随密度：附点加吟；延音加猱；浓档普通长按音也吟
       if (c.type === 'an' && !it.final) {
-        if (it.long) orn.push('猱');
-        else if (it.dotted) orn.push('吟');
+        if (it.long && curOrnDensity >= 0.35) orn.push('猱');
+        else if (it.dotted && curOrnDensity >= 0.35) orn.push('吟');
+        else if (!it.beam && curOrnDensity >= 0.85 && orn.length === 0) orn.push('吟');
       }
+      // 指法防单调：同一右手指法连用3次即换成对指法（挑↔抹 勾↔剔 托↔擘 打↔摘）
+      var PAIR = { '挑': '抹', '抹': '挑', '勾': '剔', '剔': '勾', '托': '擘', '擘': '托', '打': '摘', '摘': '打' };
+      if (PAIR[right] && rightRun.name === right && rightRun.n >= 2) {
+        right = PAIR[right];
+      }
+      if (rightRun.name === right) rightRun.n++; else rightRun = { name: right, n: 1 };
       it.right = right; it.orn = orn;
       prev = { string: c.string, right: right };
       prevType = c.type; prevString = c.string;

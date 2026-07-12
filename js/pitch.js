@@ -119,37 +119,43 @@
   //   乐句开头散音起骨架；句中优先按音（左手能绰注吟猱走，韵在其中）；
   //   同弦连贯、把位就近流动（人手不跳崖）；常用把位；整徽优先。
   // ctx = { mStart: 乐句/小节开头, prevHui: 上一按音的徽位 }
+  // ctx.profile = { san, an, fan } 三种音色的偏好倍率（编配画像，见 app.js）
+  // ctx.fast = 快速乐句（八分/十六分/三连音）——人体力学：手来不及大跳
   function candidatesFor(target, prevString, ctx) {
     ctx = ctx || {};
+    var pf = ctx.profile || { san: 1, an: 1, fan: 1 };
     var atStart = ctx.mStart !== undefined ? ctx.mStart : (prevString === null || prevString === undefined);
+    var fastK = ctx.fast ? 1.7 : 1;   // 快速乐句：换弦/移徽罚分加重
     var list = [];
     for (var s = 1; s <= 7; s++) {
       var d = target - OPEN[s - 1];
       if (d === 0) {
         // 散音：句头顺手；句中偏贵（无韵），让位给可走音的按音
-        var sc = atStart ? 0.8 : 1.5;
-        if (prevString && prevString !== s) sc += 0.9;
+        var sc = (atStart ? 0.8 : 1.5) * pf.san;
+        if (prevString && prevString !== s)
+          sc += (0.5 + 0.2 * Math.abs(s - prevString)) * fastK; // 跨弦越远右手越吃力
         list.push({ type: 'san', string: s, score: sc });
       } else if (d > 0) {
         var pos = findPosition(s, target);
         if (!pos) continue;
-        var score = 1.2;
+        var score = 1.2 * pf.an;
         score += Math.abs(pos.hui - 9.5) * 0.3;        // 常用把位(7~10徽)
         if (pos.fen !== 0) score += 0.6;                // 整徽优先
         if (pos.hui < 5) score += 3;                    // 高把位难按
         if (pos.waiwei) score += 1.5;
-        if (prevString && prevString !== s) score += 0.9;  // 少换弦
-        if (ctx.prevHui != null)                        // 把位就近流动
-          score += Math.min(1.2, Math.abs(pos.hui - ctx.prevHui) * 0.12);
+        if (prevString && prevString !== s)             // 人体力学：跨弦距离分级
+          score += (0.5 + 0.2 * Math.abs(s - prevString)) * fastK;
+        if (ctx.prevHui != null)                        // 左手移徽就近（快句加重）
+          score += Math.min(1.6, Math.abs(pos.hui - ctx.prevHui) * 0.14 * fastK);
         list.push({ type: 'an', string: s, hui: pos.hui, fen: pos.fen, waiwei: pos.waiwei, score: score });
       }
     }
-    // 泛音候选：目标音恰在泛音位上时提供（不自动首选，供点击切换）
+    // 泛音候选（1-13徽以七徽为轴的谐波家族）：偏好由画像控制
     for (var s2 = 1; s2 <= 7; s2++) {
       for (var hui in FAN_MULT) {
         var fs = fanSemitone(s2, parseInt(hui, 10));
         if (fs !== null && Math.abs(fs - target) < 0.35) {
-          var fsc = 2.2 + (prevString && prevString !== s2 ? 0.5 : 0);
+          var fsc = 2.2 * pf.fan + (prevString && prevString !== s2 ? 0.5 : 0);
           list.push({ type: 'fan', string: s2, hui: parseInt(hui, 10), score: fsc });
         }
       }
