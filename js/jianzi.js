@@ -92,7 +92,7 @@
 
     // ── 上半（0~62）──
     if (note.type === 'san') {
-      parts.push(text(50, 15, 34, '艹'));
+      parts.push(text(50, 14, 36, '艹'));
     } else {
       var lf = LEFT[note.left || '大'] || '大';
       parts.push(text(28, 17, 27, lf));
@@ -112,12 +112,13 @@
     if (UNSURE[note.right]) warn = true;
     var strGlyph = NUM[note.string] || '?';
     if (rGlyph === '勹') {
-      // 勹包住弦号
-      parts.push(text(50, 56, 50, '勹'));
-      parts.push(text(51, 88, 24, strGlyph)); // 弦号在勹下方完整露出
+      // 规律②：弦号嵌在勹口内（谱书"芶一"式），勹放大避免钩画压字
+      parts.push(text(52, 58, 62, '勹'));
+      parts.push(text(44, 66, 21, strGlyph));
     } else {
+      // 规律④：弦号紧贴指法部件，融合成一个字
       parts.push(text(50, 55, rGlyph.length > 1 ? 28 : 44, rGlyph));
-      parts.push(text(50, 92, strGlyph.length > 1 ? 19 : 26, strGlyph));
+      parts.push(text(50, 88, strGlyph.length > 1 ? 19 : 25, strGlyph));
     }
 
     // ── 走音/装饰：右侧竖排小字（多字的缩小） ──
