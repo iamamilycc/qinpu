@@ -131,7 +131,8 @@
       var d = target - OPEN[s - 1];
       if (d === 0) {
         // 散音：句头顺手；句中偏贵（无韵），让位给可走音的按音
-        var sc = (atStart ? 0.8 : 1.5) * pf.san;
+        // 散音连用衰减：连片散音平直无韵，连得越多下一个散音越贵→散按自然相间
+        var sc = (atStart ? 0.8 : 1.5) * pf.san + (ctx.sanRun || 0) * 0.75;
         if (prevString && prevString !== s)
           sc += (0.5 + 0.2 * Math.abs(s - prevString)) * fastK; // 跨弦越远右手越吃力
         list.push({ type: 'san', string: s, score: sc });

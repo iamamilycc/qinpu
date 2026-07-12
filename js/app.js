@@ -249,7 +249,7 @@
     var nNotes = toks.reduce(function (a, t) { return a + (t.kind === 'notes' ? t.group.length : 0); }, 0);
     if (nNotes === 0) { alert('没有解析到音符。示例：2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3'); return; }
     tokensB = toks; notesB = [];
-    var prev = null, prevHui = null, failed = [], barJustSeen = true;
+    var prev = null, prevHui = null, failed = [], barJustSeen = true, sanRun = 0;
     toks.forEach(function (t) {
       if (t.kind === 'br' || t.kind === 'tempo' || t.kind === 'volta' || t.kind === 'voltaEnd') return;
       if (t.kind === 'bar' || t.kind === 'time') { barJustSeen = true; return; }
@@ -264,7 +264,8 @@
         var cands = P.candidatesFor(semi, prev, {
           mStart: barJustSeen && gi === 0, prevHui: prevHui,
           profile: ARR_PROFILES[curArrProfile],
-          fast: !!(t.beam || t.six || t.triplet)   // 人体力学：快句手来不及大跳
+          fast: !!(t.beam || t.six || t.triplet),  // 人体力学：快句手来不及大跳
+          sanRun: sanRun                            // 散音连用计数→散按相间
         });
         if (cands.length === 0) {
           failed.push(jpText(n));
@@ -273,6 +274,7 @@
         }
         prev = cands[0].string;
         prevHui = (cands[0].type === 'an') ? cands[0].hui : prevHui;
+        sanRun = (cands[0].type === 'san') ? sanRun + 1 : 0;
         t.refs.push(notesB.length);
         notesB.push({
           cands: cands, pick: 0, src: n,
@@ -880,16 +882,35 @@
       .concat(pairs.slice(repL, repR), pairs.slice(repL, repR), pairs.slice(repR));
   }
 
+  // 乐句强弱拱形：句中渐强、句尾渐收（人耳最舒适的呼吸形）
+  function applyPhraseArch(ev, a, b) {
+    var n = b - a;
+    if (n < 2) return;
+    for (var i = a; i < b; i++) {
+      var pos = (i - a + 0.5) / n;
+      ev[i].vel = (ev[i].vel || 0.8) * (0.86 + 0.26 * Math.sin(Math.PI * pos));
+    }
+  }
+
   function eventsFromB() {
     var ev = [], t = 0, lastSemi = null, atBarStart = true;
     var spb = SPB; // 可被谱中 T=NN 改变
     var pendTie = null; // 连音线：待与下一同音合并
+    var phraseStart = 0; // 当前乐句(小节)在 ev 中的起点
     expandForPlay(tokensB).forEach(function (pair) {
       var tk = pair[0], ti = pair[1];
       var col = ti + 1; // 第0列是谱号
       if (tk.kind === 'br' || tk.kind === 'volta' || tk.kind === 'voltaEnd') return;
       if (tk.kind === 'tempo') { spb = 60 / tk.bpm; return; }
-      if (tk.kind === 'bar' || tk.kind === 'time') { atBarStart = true; return; }
+      if (tk.kind === 'bar' || tk.kind === 'time') {
+        atBarStart = true;
+        if (ev.length > phraseStart) {
+          applyPhraseArch(ev, phraseStart, ev.length); // 上一句强弱拱形
+          t += 0.07 * spb;                              // 句间呼吸（气口）
+          phraseStart = ev.length;
+        }
+        return;
+      }
       if (tk.kind === 'rest') { t += (tk.unit || 1) * (tk.dotted ? 1.5 : 1) * spb; return; }
       if (tk.kind === 'dash') { // 延音：上一音的拍值加长，余音继续
         if (ev.length) ev[ev.length - 1].dur += spb;
@@ -944,6 +965,7 @@
         t += dur;
       });
     });
+    if (ev.length > phraseStart) applyPhraseArch(ev, phraseStart, ev.length); // 末句
     return ev;
   }
 

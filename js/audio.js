@@ -238,7 +238,8 @@
   /* ── 走音组调度：一次拨弦 + 其后同弦滑动（同一声源改速率）──
    * grp = { head:{t,semi,orn,col,right,ntype,vel}, walks:[…] } */
   function scheduleGroup(grp, t0, useSample) {
-    var e = grp.head, when = t0 + e.t, semi = e.semi;
+    var e = grp.head, semi = e.semi;
+    var when = t0 + e.t + (Math.random() - 0.5) * 0.016; // 人手微差：时点±8ms
     var src = ctx.createBufferSource();
     var rate, off = 0, segDur, out;
     if (useSample) {
