@@ -759,6 +759,45 @@
   };
 
 
+
+  /* ══════════ 打谱风格：减字谱无节奏，给出多种机器演绎（参考，非传承打谱）══════════ */
+  var DAPU_STYLES = {
+    yun:  { name: '匀速吟诵', bpm: 56, pat: [1],                          end: 2   },
+    ge:   { name: '琴歌韵',   bpm: 63, pat: [1, 0.5, 0.5, 1, 1, 0.5, 0.5, 1.5], end: 2 },
+    san:  { name: '散板古意', bpm: 44, pat: [1.4, 0.8, 1.1, 0.7, 1.6, 0.9], end: 2.6 },
+    qing: { name: '轻快',     bpm: 86, pat: [0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1], end: 1.5 }
+  };
+
+  window.playStyle = function (id) {
+    var st = DAPU_STYLES[id];
+    if (!st) return;
+    var items = scoreA.filter(function (x) { return x.kind === 'note'; });
+    if (!items.length) { alert('谱面还是空的：先粘贴文字减字谱解析，或点选录入。'); return; }
+    var spb = 60 / st.bpm;
+    var ev = [], t = 0, pi = 0, lastSemi = null;
+    scoreA.forEach(function (it, idx) {
+      if (it.kind === 'bar') { pi = 0; return; }
+      if (it.kind !== 'note') return;
+      // 句读：小节线后重新起句；句尾（下一项是小节线或结尾）拉长
+      var next = scoreA[idx + 1];
+      var phraseEnd = !next || (next && next.kind === 'bar');
+      var beats = phraseEnd ? st.end : st.pat[pi % st.pat.length];
+      var dur = beats * spb;
+      var vel = (pi === 0) ? 1.0 : (beats < 1 ? 0.55 : 0.78);
+      var n = it.note;
+      var semi = P.noteSemitone(n);
+      if (semi === null || isNaN(semi)) { pi++; t += dur; return; }
+      if (n.type === 'walk') {
+        ev.push({ t: t, semi: semi, col: null, orn: [], glideFrom: lastSemi, dur: dur, str: n.string, vel: vel });
+      } else {
+        ev.push({ t: t, semi: semi, col: null, orn: n.orn || [], dur: dur, str: n.string, vel: vel, right: n.right, ntype: n.type });
+      }
+      lastSemi = semi;
+      pi++; t += dur;
+    });
+    window.QinAudio.playSeq(ev, null);
+  };
+
   /* ══════════ 打印/存PDF：弹出独立打印页（兼容微信等 window.print 无效的环境）══════════ */
   window.printScore = function (which) {
     var el = $(which === 'A' ? 'scoreA' : 'scoreB');

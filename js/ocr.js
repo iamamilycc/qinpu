@@ -65,7 +65,11 @@
     '十六分音符（两条下划线）=连写后加=（如2222=）　三连音=括号包裹如(555)　' +
     '延音（增加一拍的横线）=-　休止=0，八分休止=0_　倚音（小音符）={3}5　' +
     '延长号=数字后加^　谱面每行结束输出 /　一房=[1　二房=[2　房结束=]\n' +
-    '若整页找不到简谱数字行，只输出 JIANZI_ONLY。';
+    '若整页找不到简谱数字行，则转录【减字谱行】：把每个减字翻译成口述文字格式，' +
+    '整体以 JIANZI: 开头输出一行。口述格式：散勾一=空弦勾一弦　名九挑四=名指按九徽挑四弦　' +
+    '大七六托五=大指七徽六分托五弦　泛七挑一=七徽泛音挑一弦　上九/下七六=走音（滑到该徽位）　' +
+    '|=小节线　左手指=大/食/中/名，右手指法=挑抹勾剔打摘托擘撮轮历滚拂等，弦号一~七，徽位一~十三。' +
+    '无法辨认的减字输出?占位。';
 
   function callVision(b64) {
     $('ocrMsg').textContent = '🔍 AI 识谱中（约 10~30 秒，请勿离开）…';
@@ -115,8 +119,15 @@
         ? (j.content && j.content[0] && j.content[0].text || '')
         : (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content || '')).trim();
       txt = txt.replace(/^```[^\n]*\n?/, '').replace(/```\s*$/, '').trim();
-      if (!txt || txt.indexOf('JIANZI_ONLY') >= 0) {
-        $('ocrMsg').textContent = '⚠️ 这页没识别到简谱行（纯减字谱识别尚在实验规划中）。请拍含简谱数字行的谱页，正对、光线均匀。';
+      if (!txt) { $('ocrMsg').textContent = '⚠️ 没识别出内容，请拍正、拍清晰再试。'; return; }
+      if (txt.indexOf('JIANZI:') === 0) {
+        // 纯减字谱（实验）：转成文字减字谱 → 解析 → 出谱，可用打谱风格试听
+        var jz = txt.slice(7).trim();
+        document.getElementById('jzTextIn').value = jz;
+        window.switchTab('j2p');
+        window.parseJzText();
+        document.getElementById('jzTextMsg').textContent +=
+          '　📷 来自拍照识别（实验功能）——务必逐字对照原谱校对，? 为 AI 无法辨认的字；校对后用下方「🎭 打谱风格」试听多种演绎。';
         return;
       }
       $('inJianpu').value = txt;

@@ -157,6 +157,14 @@
       <button onclick="stopPlay()">⏹ 停止</button>
       <button onclick="printScore('A')">🖨 打印 / 存PDF</button>
     </div>
+    <div class="btn-row" style="margin-bottom:8px">
+      <span style="align-self:center;font-size:.88rem;color:#6d5f47">🎭 打谱风格：</span>
+      <button onclick="playStyle('yun')">匀速吟诵 ▶</button>
+      <button onclick="playStyle('ge')">琴歌韵 ▶</button>
+      <button onclick="playStyle('san')">散板古意 ▶</button>
+      <button onclick="playStyle('qing')">轻快 ▶</button>
+    </div>
+    <p class="note">减字谱不记节奏——以上是机器打谱的几种参考演绎（节奏诠释不同），传世名曲的地道节奏请以师承打谱为准。</p>
     <div id="scoreA" class="score"></div>
     <h2 style="margin-top:1em">③ 译出简谱</h2>
     <textarea id="outJianpu" readonly rows="2" placeholder="录入减字后自动生成"></textarea>
