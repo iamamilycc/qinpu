@@ -28,16 +28,15 @@
     '双弹': '双', '蠲': '蠲', '历': '厂',
     '滚': '滚', '拂': '弗', '滚拂': '滚弗',
     '泼': '癶', '剌': '申', '泼剌': '癶申', '伏': '伏',
-    '打圆': '回', '索铃': '索铃'
+    '打圆': '打圆', '索铃': '索铃', '掐撮三声': '掐撮三声' // 三者均为手绘字，见 render
   };
   // 上下叠合的省文（谱字表：反撮=反字头+早）；半轮为手绘字（龹加竖钩），见 render
   var STACK = { '反撮': ['⺁', '早'] };
   var UNSURE = {
     '滚': 1, '拂': 1, '滚拂': 1, '短锁': 1, '长锁': 1, '背锁': 1,
     '如一声': 1, '双弹': 1, '蠲': 1,
-    '索铃': 1,
     '双撞': 1, '往来': 1, '分开': 1,
-    '掐起': 1, '带起': 1, '爪起': 1,
+    '带起': 1,
     '长吟': 1, '细吟': 1, '游吟': 1, '急吟': 1
   };
   var ORN = {
@@ -124,6 +123,23 @@
       parts.push('<path d="M31 34 L69 34 L69 62 Q69 70 60 72" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"/>');
       parts.push('<path d="M55 40 L35 68 M65 42 L47 71" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>');
       parts.push(text(50, 92, 25, strGlyph));
+    } else if (note.right === '打圆') {
+      // 打圆省文（用户校正）：口字框内一个「丁」（⿴囗丁），非现行汉字，手绘
+      parts.push('<path d="M30 30 L70 30 L70 74 L30 74 Z" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linejoin="round"/>');
+      parts.push(text(50, 53, 30, '丁'));
+      parts.push(text(50, 94, 21, strGlyph));
+    } else if (note.right === '索铃') {
+      // 索铃省文（书证特写）：索字头（十＋冖）＋令字底（龴＋丶），非现行汉字，手绘
+      parts.push('<path d="M50 24 L50 38 M40 31 L60 31 M34 47 L36 42 L64 42 L66 47" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>');
+      parts.push('<path d="M41 54 L59 54 L45 68 M54 58 L59 68" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>');
+      parts.push(text(50, 90, 22, strGlyph));
+    } else if (note.right === '掐撮三声') {
+      // 掐撮三声省文（书证特写）：爪字头＋曰＋长撇裹「三」的组合字，手绘＋叠字
+      parts.push(text(50, 27, 22, '爫'));
+      parts.push(text(50, 45, 19, '曰'));
+      parts.push('<path d="M40 55 Q34 70 25 79" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>');
+      parts.push(text(56, 68, 19, '三'));
+      parts.push(text(50, 96, 19, strGlyph));
     } else if (note.right === '半轮') {
       // 半轮省文非现行汉字（用户手书对照）：丷＋两横＋撇捺＋中竖钩（龹形加竖钩），手绘
       parts.push('<path d="M40 30 L44 38 M60 30 L56 38 M35 46 L65 46 M30 56 L70 56" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>');
