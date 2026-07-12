@@ -67,19 +67,28 @@
       if (w === '|' || w === '｜') { scoreA.push({ kind: 'bar' }); return; }
       // 尾缀走音
       var orn = [];
+      var ORN_SUF = ['长吟', '细吟', '游吟', '急吟', '大猱', '急猱', '缓猱', '绰', '注', '吟', '猱'];
       var changed = true;
       while (changed) {
         changed = false;
-        ORN_NAMES.forEach(function (o) {
-          if (w.length > 1 && w.slice(-1) === o) { orn.unshift(o); w = w.slice(0, -1); changed = true; }
-        });
+        for (var oi = 0; oi < ORN_SUF.length; oi++) {
+          var o = ORN_SUF[oi];
+          if (w.length > o.length && w.slice(-o.length) === o) {
+            orn.unshift(o); w = w.slice(0, -o.length); changed = true; break;
+          }
+        }
       }
-      // 上/下 + 徽位 = 走音（沿用上一音的弦）
+      // 上/下 + 徽位 = 走音（沿用上一音的弦）；校错：上=徽位数变小，下=变大
       var mW = w.match(/^(上|下)(十三|十二|十一|[一二三四五六七八九十])([一二三四五六七八九])?$/);
       if (mW && prevNote && prevNote.string) {
-        var wn = { type: 'walk', dir: mW[1], string: prevNote.string, hui: cnNum(mW[2]), fen: mW[3] ? cnNum(mW[3]) : 0 };
+        var wHui = cnNum(mW[2]);
+        if (prevNote.hui) {
+          if (mW[1] === '上' && wHui > prevNote.hui) errs.push(w0 + '(⚠上行徽位应变小，方向存疑)');
+          if (mW[1] === '下' && wHui < prevNote.hui) errs.push(w0 + '(⚠下行徽位应变大，方向存疑)');
+        }
+        var wn = { type: 'walk', dir: mW[1], string: prevNote.string, hui: wHui, fen: mW[3] ? cnNum(mW[3]) : 0 };
         scoreA.push({ kind: 'note', note: wn });
-        prevNote = { string: prevNote.string };
+        prevNote = { string: prevNote.string, hui: wHui };
         added++; return;
       }
       // 裸弦号 = 沿用上一指法（散音简省）
@@ -291,6 +300,46 @@
       barJustSeen = false;
     });
     if (notesB.length) notesB[notesB.length - 1].final = true;
+    // ── 调式主音（毕曲落本律：以末音为主音）——供稳定音强弱分层 ──
+    if (notesB.length) {
+      var lastIt = notesB[notesB.length - 1];
+      var lastSemi2 = P.jianpuToSemitone(lastIt.src.deg, lastIt.src.sharp, lastIt.src.oct);
+      window._tonicPc = ((Math.round(lastSemi2) % 12) + 12) % 12;
+    }
+    // ── 对句配对（唐世璋）：签名相同的小节 → 沿用首现小节的编配 ──
+    (function () {
+      var measures = [], cur = { sig: [], refs: [] };
+      tokensB.forEach(function (t) {
+        if (t.kind === 'bar') { if (cur.refs.length) measures.push(cur); cur = { sig: [], refs: [] }; return; }
+        if (t.kind !== 'notes') return;
+        t.group.forEach(function (n, gi) {
+          cur.sig.push(n.deg + ',' + n.oct + ',' + n.sharp + ',' + (t.beam ? 1 : 0) + ',' +
+            ((t.dotted && gi === t.group.length - 1) ? 1 : 0));
+        });
+        cur.refs = cur.refs.concat(t.refs);
+      });
+      if (cur.refs.length) measures.push(cur);
+      var seen = {};
+      measures.forEach(function (m) {
+        var key = m.sig.join('|');
+        if (seen[key]) {
+          var first = seen[key];
+          m.refs.forEach(function (r, i) {
+            if (r !== -1 && first[i] !== undefined && first[i] !== -1) notesB[r].pairRef = first[i];
+          });
+        } else seen[key] = m.refs;
+      });
+      // 应用：复制首现小节的选位（弹法一致，听感成对）
+      notesB.forEach(function (it) {
+        if (it.pairRef == null) return;
+        var ref = notesB[it.pairRef], c0 = ref.cands[ref.pick];
+        for (var i = 0; i < it.cands.length; i++) {
+          var c = it.cands[i];
+          if (c.type === c0.type && c.string === c0.string &&
+              (c.hui || 0) === (c0.hui || 0) && (c.fen || 0) === (c0.fen || 0)) { it.pick = i; break; }
+        }
+      });
+    })();
     renderScoreB();
     $('convMsg').textContent = failed.length ?
       '⚠️ 以下音超出古琴正调音域（标红处）：' + failed.join(' ') : '';
@@ -350,6 +399,25 @@
         return;
       }
       var c = it.cands[it.pick];
+      // 对句：沿用首现音的全部演奏决策（含走音），听感完全成对
+      if (it.pairRef != null && notesB[it.pairRef].right !== undefined && !it.custom) {
+        var refN = notesB[it.pairRef];
+        it.right = refN.right; it.orn = (refN.orn || []).slice();
+        if (refN.walk) {
+          it.walk = { dir: refN.walk.dir, string: refN.walk.string, hui: refN.walk.hui, fen: refN.walk.fen };
+          it.walkAvail = it.walk;
+          prevType = 'walk'; prevString = it.walk.string;
+          prevSemi = P.anSemitone(it.walk.string, it.walk.hui, it.walk.fen);
+          walkChain++;
+        } else {
+          it.walk = null; it.walkAvail = refN.walkAvail || null;
+          prevType = c.type; prevString = c.string;
+          prevSemi = P.noteSemitone(candToNote(c));
+          prev = { string: c.string, right: it.right };
+          walkChain = 0;
+        }
+        return;
+      }
       var target = P.jianpuToSemitone(it.src.deg, it.src.sharp, it.src.oct);
       // ── 走音判定（古琴"一弹多音"）：上一音是同弦按音/走音，音程≤大三度
       //    → 本音由左手上/下滑到位，右手不另弹（谱记小字"上/下+徽位"）
@@ -805,11 +873,27 @@
 
   /* ══════════ 打谱风格：减字谱无节奏，给出多种机器演绎（参考，非传承打谱）══════════ */
   var DAPU_STYLES = {
+    wen:  { name: '文句法',   bpm: 58 },   // 王仲舒节-间音拍法（默认推荐）
     yun:  { name: '匀速吟诵', bpm: 56, pat: [1],                          end: 2   },
     ge:   { name: '琴歌韵',   bpm: 63, pat: [1, 0.5, 0.5, 1, 1, 0.5, 0.5, 1.5], end: 2 },
     san:  { name: '散板古意', bpm: 44, pat: [1.4, 0.8, 1.1, 0.7, 1.6, 0.9], end: 2.6 },
     qing: { name: '轻快',     bpm: 86, pat: [0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1], end: 1.5 }
   };
+
+  // 王仲舒《直指节奏法》：单数字句奇位作节偶位间音（0.5+0.5成对,末字加长）；
+  // 双数字句末字自作一节、倒数第二字延长缓入
+  function wenjuDurs(n) {
+    var d = [], i;
+    if (n === 1) return [2];
+    if (n % 2 === 1) {
+      for (i = 0; i < n - 1; i++) d.push(0.5);
+      d.push(1.5);
+    } else {
+      for (i = 0; i < n - 2; i++) d.push(0.5);
+      d.push(1.5); d.push(1);
+    }
+    return d;
+  }
 
   window.playStyle = function (id) {
     var st = DAPU_STYLES[id];
@@ -817,26 +901,37 @@
     var items = scoreA.filter(function (x) { return x.kind === 'note'; });
     if (!items.length) { alert('谱面还是空的：先粘贴文字减字谱解析，或点选录入。'); return; }
     var spb = 60 / st.bpm;
-    var ev = [], t = 0, pi = 0, lastSemi = null;
-    scoreA.forEach(function (it, idx) {
-      if (it.kind === 'bar') { pi = 0; return; }
-      if (it.kind !== 'note') return;
-      // 句读：小节线后重新起句；句尾（下一项是小节线或结尾）拉长
-      var next = scoreA[idx + 1];
-      var phraseEnd = !next || (next && next.kind === 'bar');
-      var beats = phraseEnd ? st.end : st.pat[pi % st.pat.length];
-      var dur = beats * spb;
-      var vel = (pi === 0) ? 1.0 : (beats < 1 ? 0.55 : 0.78);
-      var n = it.note;
-      var semi = P.noteSemitone(n);
-      if (semi === null || isNaN(semi)) { pi++; t += dur; return; }
-      if (n.type === 'walk') {
-        ev.push({ t: t, semi: semi, col: null, orn: [], glideFrom: lastSemi, dur: dur, str: n.string, vel: vel });
-      } else {
-        ev.push({ t: t, semi: semi, col: null, orn: n.orn || [], dur: dur, str: n.string, vel: vel, right: n.right, ntype: n.type });
-      }
-      lastSemi = semi;
-      pi++; t += dur;
+    // 先按小节线切句
+    var phrases = [], cur = [];
+    scoreA.forEach(function (it) {
+      if (it.kind === 'bar') { if (cur.length) phrases.push(cur); cur = []; return; }
+      if (it.kind === 'note') cur.push(it.note);
+    });
+    if (cur.length) phrases.push(cur);
+    var ev = [], t = 0, lastSemi = null;
+    phrases.forEach(function (ph) {
+      var durs = (id === 'wen') ? wenjuDurs(ph.length) : null;
+      ph.forEach(function (n, pi) {
+        var beats = durs ? durs[pi]
+          : (pi === ph.length - 1 ? st.end : st.pat[pi % st.pat.length]);
+        // 成公亮：带吟猱的音必然稍长
+        var hasYN = (n.orn || []).some(function (o) { return o.indexOf('吟') >= 0 || o.indexOf('猱') >= 0; });
+        if (hasYN) beats *= 1.25;
+        var dur = beats * spb;
+        var vel = (pi === 0) ? 1.0 : (beats < 1 ? 0.55 : 0.8);
+        // 板眼（祝凤喈）：间音作"腰板"——出音略后于拍点
+        var late = (durs && beats <= 0.7 && pi % 2 === 1) ? 0.035 : 0;
+        var semi = P.noteSemitone(n);
+        if (semi === null || isNaN(semi)) { t += dur; return; }
+        if (n.type === 'walk') {
+          ev.push({ t: t + late, semi: semi, col: null, orn: [], glideFrom: lastSemi, dur: dur, str: n.string, vel: vel });
+        } else {
+          ev.push({ t: t + late, semi: semi, col: null, orn: n.orn || [], dur: dur, str: n.string, vel: vel, right: n.right, ntype: n.type });
+        }
+        lastSemi = semi;
+        t += dur;
+      });
+      t += 0.35 * spb; // 余板：句末留白
     });
     window.QinAudio.playSeq(ev, null);
   };
@@ -923,6 +1018,12 @@
         // 力度分层（拉开差距才听得见）：小节头强拍 1.0 → 正拍 0.7 →
         // 八分前半 0.58 → 八分后半 0.42；附点/长音是乐句呼吸点，给 0.9
         var vel = atBarStart ? 1.0 : (unit === 0.5 && gi % 2 === 1) ? 0.42 : (unit === 0.5 ? 0.58 : 0.7);
+        if (window._tonicPc != null) { // 调式分层：骨干音稳重、偏音轻巧
+          var mel = P.jianpuToSemitone(n.deg, n.sharp, n.oct);
+          var rel = (((Math.round(mel) % 12) + 12) % 12 - window._tonicPc + 12) % 12;
+          if (rel === 0 || rel === 7) vel = Math.min(1, vel * 1.06);
+          else if (rel === 1 || rel === 5 || rel === 11) vel *= 0.92;
+        }
         if ((tk.dotted && gi === tk.group.length - 1) && !atBarStart) vel = Math.max(vel, 0.9);
         atBarStart = false;
         var refPeek = tk.refs[gi];
@@ -1066,6 +1167,7 @@
       ['注', '自上而下滑入本位（下滑音），出音有"落"意'],
       ['吟', '按弦后小幅度摆动，声音微颤如吟哦'],
       ['猱', '按弦后较大幅度摆动，苍劲之声'],
+      ['吟猱细分', '细吟(小快)/长吟(绵长)/游吟(飘移)/急吟；大猱(阔)/急猱/缓猱——文字减字谱尾缀即可用'],
       ['上', '弹响后左手沿弦上移至另一徽位，音随之升高'],
       ['下', '弹响后左手下移，音随之降低'],
       ['进复', '上移一位再回到本位（去而复返，两个音）'],

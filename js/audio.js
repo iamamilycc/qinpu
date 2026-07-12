@@ -140,6 +140,14 @@
     if (has('唤')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(160), t0 + 0.08); p.linearRampToValueAtTime(r(-120), t0 + 0.25); p.linearRampToValueAtTime(base, t0 + 0.4); }
     if (has('吟')) vib(p, base, t0, 4.5, 45, 1.0);
     if (has('猱')) vib(p, base, t0, 3.0, 95, 1.2);
+    // 吟猱细分（幅度音分/频率Hz/时长s 各异）
+    if (has('细吟')) vib(p, base, t0, 6.0, 25, 0.8);
+    if (has('长吟')) vib(p, base, t0, 4.2, 45, 1.8);
+    if (has('急吟')) vib(p, base, t0, 6.5, 55, 0.6);
+    if (has('游吟')) vib(p, base, t0, 3.2, 55, 1.6);
+    if (has('大猱')) vib(p, base, t0, 2.6, 140, 1.5);
+    if (has('急猱')) vib(p, base, t0, 4.0, 110, 0.8);
+    if (has('缓猱')) vib(p, base, t0, 2.2, 80, 1.7);
     if (has('上')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(200), t0 + 0.42); }
     if (has('下')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(-200), t0 + 0.42); }
     if (has('进复')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(200), t0 + 0.2); p.setValueAtTime(r(200), t0 + 0.38); p.linearRampToValueAtTime(base, t0 + 0.55); }
@@ -228,7 +236,8 @@
     if (has('逗')) frictionAt(when + 0.04, 0.2, 1, 0.01);
     if (has('往来')) { frictionAt(t0, 0.7, 1, 0.011); frictionAt(t0 + 0.55, 0.7, -1, 0.011); frictionAt(t0 + 1.1, 0.6, 1, 0.01); }
     if (has('淌')) frictionAt(t0, 1.3, -1, 0.013);
-    if (has('猱')) frictionAt(t0, 1.4, 0, 0.007); // 阔颤的轻微揉弦沙沙
+    if (has('猱') || has('大猱') || has('急猱') || has('缓猱') || has('长吟') || has('游吟'))
+      frictionAt(t0, 1.4, 0, 0.007); // 阔颤/长颤的轻微揉弦沙沙
   }
 
   /* ── 指法音色族（琴学物理：向内指肉多→温厚；向外指甲触弦→清亮）── */
