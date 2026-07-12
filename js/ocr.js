@@ -69,15 +69,18 @@
 
   function callVision(b64) {
     $('ocrMsg').textContent = '🔍 AI 识谱中（约 10~30 秒，请勿离开）…';
-    fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': getKey(),
+    var key = getKey();
+    var isAnthropic = key.indexOf('sk-ant-') === 0;   // 按 Key 前缀自动识别服务商
+    var url, headers, body;
+    if (isAnthropic) {
+      url = 'https://api.anthropic.com/v1/messages';
+      headers = {
+        'x-api-key': key,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
         'content-type': 'application/json'
-      },
-      body: JSON.stringify({
+      };
+      body = {
         model: 'claude-sonnet-5',
         max_tokens: 2000,
         messages: [{
@@ -87,13 +90,30 @@
             { type: 'text', text: PROMPT }
           ]
         }]
-      })
-    }).then(function (r) {
+      };
+    } else {                                          // OpenAI（sk-…）
+      url = 'https://api.openai.com/v1/chat/completions';
+      headers = { 'Authorization': 'Bearer ' + key, 'content-type': 'application/json' };
+      body = {
+        model: 'gpt-4o',
+        max_tokens: 2000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: PROMPT },
+            { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + b64 } }
+          ]
+        }]
+      };
+    }
+    fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) }).then(function (r) {
       if (r.status === 401) throw new Error('KEY');
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     }).then(function (j) {
-      var txt = (j.content && j.content[0] && j.content[0].text || '').trim();
+      var txt = (isAnthropic
+        ? (j.content && j.content[0] && j.content[0].text || '')
+        : (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content || '')).trim();
       txt = txt.replace(/^```[^\n]*\n?/, '').replace(/```\s*$/, '').trim();
       if (!txt || txt.indexOf('JIANZI_ONLY') >= 0) {
         $('ocrMsg').textContent = '⚠️ 这页没识别到简谱行（纯减字谱识别尚在实验规划中）。请拍含简谱数字行的谱页，正对、光线均匀。';
