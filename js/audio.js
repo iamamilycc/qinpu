@@ -140,8 +140,8 @@
     if (has('唤')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(160), t0 + 0.08); p.linearRampToValueAtTime(r(-120), t0 + 0.25); p.linearRampToValueAtTime(base, t0 + 0.4); }
     if (has('吟')) vib(p, base, t0, 4.5, 45, 1.0);
     if (has('猱')) vib(p, base, t0, 3.0, 95, 1.2);
-    if (has('上')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(200), t0 + 0.3); }
-    if (has('下')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(-200), t0 + 0.3); }
+    if (has('上')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(200), t0 + 0.42); }
+    if (has('下')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(-200), t0 + 0.42); }
     if (has('进复')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(200), t0 + 0.2); p.setValueAtTime(r(200), t0 + 0.38); p.linearRampToValueAtTime(base, t0 + 0.55); }
     if (has('退复')) { p.setValueAtTime(base, t0); p.linearRampToValueAtTime(r(-200), t0 + 0.2); p.setValueAtTime(r(-200), t0 + 0.38); p.linearRampToValueAtTime(base, t0 + 0.55); }
     if (has('往来')) vib(p, base, t0, 0.9, 160, 1.6);
@@ -314,15 +314,17 @@
     grp.walks.forEach(function (w) {
       var wWhen = t0 + w.t;
       var nr = rate * Math.pow(2, (w.semi - semi) / 12);
-      var slide = 0.16;
+      var slide = 0.22;   // 滑得从容些，耳朵抓得住
       p.setValueAtTime(curRate, Math.max(when, wWhen - 0.02));
       p.linearRampToValueAtTime(nr, wWhen + slide);
-      // 虚：滑动中音量凹 25%，到位回到自然衰减线（略低，能量有损耗）
-      lvl *= 0.93;
-      g.gain.setValueAtTime(Math.min(lvl / 0.88, chain.vol), Math.max(when, wWhen - 0.02));
-      g.gain.linearRampToValueAtTime(lvl * 0.88, wWhen + slide * 0.5);
-      g.gain.linearRampToValueAtTime(lvl, wWhen + slide);
-      frictionAt(wWhen - 0.02, slide + 0.22, nr > curRate ? 1 : -1, 0.014);
+      // 滑动补偿：走音发生时余音已衰减，指力压弦提振——增益抬回可闻水平，
+      // 滑动中保留轻微"虚"感，到位后清晰
+      var boosted = Math.min(chain.vol * 0.95, lvl * 1.55);
+      g.gain.setValueAtTime(lvl * 0.9, Math.max(when, wWhen - 0.02));
+      g.gain.linearRampToValueAtTime(boosted * 0.85, wWhen + slide * 0.5);
+      g.gain.linearRampToValueAtTime(boosted, wWhen + slide);
+      lvl = boosted;
+      frictionAt(wWhen - 0.02, slide + 0.24, nr > curRate ? 1 : -1, 0.022);
       curRate = nr; if (nr > maxRate) maxRate = nr;
       lastWhen = wWhen;
     });

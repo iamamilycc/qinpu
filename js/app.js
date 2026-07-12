@@ -298,9 +298,12 @@
   /* ══════════ 编配画像：一首简谱 → 多版减字谱 ══════════
    * 对应琴学审美的可测代理：宏(广)=散音骨架铺得开；圆=按音走韵连贯；远=泛音清冷+留白 */
   var ARR_PROFILES = {
-    hong: { name: '宏·散音骨架', san: 0.75, an: 1.25, fan: 1.15, walkMax: 2 },
-    yuan2:{ name: '圆·走韵悠扬', san: 1.25, an: 0.85, fan: 1.05, walkMax: 3 },
-    yuan3:{ name: '远·泛音清冷', san: 1.1,  an: 1.05, fan: 0.5,  walkMax: 2 }
+    hong: { name: '宏·散音骨架', san: 0.75, an: 1.25, fan: 1.15, walkMax: 2,
+            pal: { low: ['托', '勾', '剔', '勾'], high: ['勾', '挑', '剔', '抹'] } },   // 厚重
+    yuan2:{ name: '圆·走韵悠扬', san: 1.25, an: 0.85, fan: 1.05, walkMax: 3,
+            pal: { low: ['勾', '抹', '托', '挑'], high: ['挑', '抹', '勾', '打'] } },   // 流畅
+    yuan3:{ name: '远·泛音清冷', san: 1.1,  an: 1.05, fan: 0.5,  walkMax: 2,
+            pal: { low: ['挑', '勾', '摘', '抹'], high: ['挑', '摘', '抹', '打'] } }    // 轻灵
   };
   var curArrProfile = 'yuan2';   // 默认：圆
   var curOrnDensity = 0.6;       // 韵味装饰密度 0.3淡/0.6中/0.9浓
@@ -332,6 +335,7 @@
   function computePerform() {
     var prev = null, prevSemi = null, prevType = null, prevString = null, walkChain = 0;
     var rightRun = { name: '', n: 0 };   // 指法连用计数（防全曲一个指法）
+    var palIdx = 0;                       // 调色板轮转游标
     notesB.forEach(function (it) {
       // 用户自定义弹法：全盘尊重，不做任何自动分配
       if (it.custom) {
@@ -379,7 +383,11 @@
       } else if (it.mStart && c.type === 'san' && c.string <= 2) {
         right = '托';
       } else {
-        right = c.string <= 3 ? '勾' : '挑';
+        // 画像专属指法调色板轮转：同曲风内八法循环上手，不再勾挑包场
+        var pal = ARR_PROFILES[curArrProfile].pal;
+        var row = c.string <= 3 ? pal.low : pal.high;
+        right = row[palIdx % row.length];
+        palIdx++;
       }
       if (c.type === 'an' && !it.beam && prevSemi !== null && curOrnDensity >= 0.4) {
         if (semi > prevSemi + 0.5) orn.push('绰');
