@@ -19,7 +19,9 @@
     ruibin:     { name: '蕤宾调·紧五 1=♭B',   open: [0, 2, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] },
     manjiao:    { name: '慢角调·慢三 1=C',    open: [0, 2, 4, 7, 9, 12, 14],   key: 0,  flats: [] },
     manshang:   { name: '慢商调·慢二 1=F',    open: [0, 0, 5, 7, 9, 12, 14],   key: 5,  flats: [10] },
-    huangzhong: { name: '黄钟调·慢一紧五 1=♭B', open: [-2, 2, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] }
+    huangzhong: { name: '黄钟调·慢一紧五 1=♭B', open: [-2, 2, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] },
+    // 琴书弦法表（2026-07-12 核对）：凄凉＝紧二五，C ♭E F G ♭B c d，别名楚商
+    qiliang:    { name: '凄凉调·紧二五 1=♭B',  open: [0, 3, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] }
   };
   var CUR_TUNING = 'zheng';
 
