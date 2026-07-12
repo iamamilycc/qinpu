@@ -44,9 +44,9 @@
     '绰': '卜', '注': '氵', '吟': '今', '猱': '犭', '上': '上', '下': '下', '引': '弓',
     '长吟': '长今', '细吟': '细今', '游吟': '游今', '急吟': '急今',
     '大猱': '大犭', '急猱': '急犭', '缓猱': '缓犭',
-    '进复': '隹白', '退复': '艮白', '撞': '立', '双撞': '双立', '唤': '奂',
+    '进复': '进复', '退复': '退复', '撞': '立', '双撞': '双立', '唤': '奂', // 进复/退复的复=复字上半,手绘
     '逗': '豆', '往来': '徕', '淌': '尚下', '分开': '分开',
-    '罨': '内', '虚罨': '虚内', '掐起': '掐起', '带起': '电',
+    '罨': '罨', '虚罨': '虚罨', '掐起': '掐起', '带起': '电', // 罨=冂框内人(人不冒头),手绘
     '爪起': '爪起', '推出': '拙', '放合': '方合'
   };
   // 上下叠排的小字省文：起字家族（巳=起+顶部手指部件，维基证）；分开=⿱八开（用户书证）
@@ -172,12 +172,40 @@
     }
 
     // ── 走音/装饰：右侧竖排小字（多字的缩小） ──
+    // 手绘小字：复字上半（𠂉＋日，用户校正"不是白"）
+    function fuTop(cx, cy) {
+      return '<path d="M' + (cx + 1) + ' ' + (cy - 9) + ' L' + (cx - 4) + ' ' + (cy - 5) +
+        ' M' + (cx - 4.5) + ' ' + (cy - 6) + ' L' + (cx + 4.5) + ' ' + (cy - 6) +
+        ' M' + (cx - 3.5) + ' ' + (cy - 3) + ' L' + (cx + 3.5) + ' ' + (cy - 3) + ' L' + (cx + 3.5) + ' ' + (cy + 7) +
+        ' L' + (cx - 3.5) + ' ' + (cy + 7) + ' Z M' + (cx - 3.5) + ' ' + (cy + 2) + ' L' + (cx + 3.5) + ' ' + (cy + 2) +
+        '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="jz-orn"/>';
+    }
+    // 手绘小字：罨＝冂框内一个人，人不冒头（用户校正"非内字"）
+    function yanGlyph(cx, cy, s) {
+      s = s || 1;
+      return '<path d="M' + (cx - 6 * s) + ' ' + (cy + 7 * s) + ' L' + (cx - 6 * s) + ' ' + (cy - 7 * s) +
+        ' L' + (cx + 6 * s) + ' ' + (cy - 7 * s) + ' L' + (cx + 6 * s) + ' ' + (cy + 7 * s) +
+        ' M' + cx + ' ' + (cy - 4 * s) + ' L' + (cx - 4 * s) + ' ' + (cy + 5 * s) +
+        ' M' + cx + ' ' + (cy - 4 * s) + ' L' + (cx + 4 * s) + ' ' + (cy + 5 * s) +
+        '" fill="none" stroke="currentColor" stroke-width="' + (1.9 * s) + '" stroke-linecap="round" stroke-linejoin="round" class="jz-orn"/>';
+    }
     (note.orn || []).forEach(function (o, i) {
       var y = 46 + i * 19;
       if (o === '绰') {
         // 绰＝卜但右点朝上（用户书证），与徽外的普通卜相区别——手绘
         parts.push('<path d="M92 ' + (y - 8) + ' L92 ' + (y + 7) + ' M92 ' + (y + 1) + ' L97 ' + (y - 4) +
           '" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" class="jz-orn"/>');
+        return;
+      }
+      if (o === '罨') { parts.push(yanGlyph(92, y, 1)); return; }
+      if (o === '虚罨') {
+        parts.push(text(92, y - 6, 9, '虚', 'jz-orn'));
+        parts.push(yanGlyph(92, y + 7, 0.62));
+        return;
+      }
+      if (o === '进复' || o === '退复') {
+        parts.push(text(92, y - 6, 9, o === '进复' ? '隹' : '艮', 'jz-orn'));
+        parts.push(fuTop(92, y + 8));
         return;
       }
       if (ORN_STACK[o]) {
