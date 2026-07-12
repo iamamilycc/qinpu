@@ -4,15 +4,16 @@
  * 减字结构：上半 = 左手指法 + 徽位；下半 = 右手指法 + 弦号
  * Unicode 未收录减字，故用 SVG 把部件动态叠成一个"字"。
  *
- * 字形依据：用户琴书凡例谱字表（2026-07-12 三页照片+8张特写+用户手书确认）——
- *   八法：木抹 乚挑 勹勾 𠃓剔(手绘) 丁打 亐摘 乇托 尸劈(擘)
- *   组合：早撮 ⿱⺁早反撮 厂历 仑轮 半轮(龹加竖钩,手绘) 回打圆 癶拨 申剌 伏伏
- *   左手：卜绰(点朝上,手绘) 氵注 豆逗 立撞 隹进 艮退 白复 今吟 犭猱
- *        方放 合合 奂唤 冈罨 拙推出 ⻊跪 尚淌 电带起(维基证)
- *        起字家族(维基证)：巳=起+顶部手指部件——⺈巳掐起 爫巳爪起(叠排)
- *        玄滚 徕往来 弁分开(维基证)
- *   标记：艹散 正泛止 ⿱⺈巳泛起 亻食指 卜徽外(本站正文沿用「外」)
- *   仍待定：锁类组合形、蠲、双撞、发一声 —— UNSURE 标记
+ * 组字方式：照 docs/减字组字文法.md 五大律，全部真字体部件——
+ *   容器律（弦号写进指法怀里）：勹勾 乚挑 乇托 勹+冂剔 亠丷冂摘
+ *   截取律（clipChar 裁真字）：束去撇捺剌 兴去中点蠲 衮上半滚 長上半长锁
+ *        今去人吟 复上半(进复退复) 声下半(掐撮三声)
+ *   叠合律（STACK/ORN_STACK）：北巛背锁 矢巛短锁 双单双弹 ⺈巳掐起
+ *        爫巳爪起 巾巳带起 八开分开
+ *   框架律：撮/反撮/掐撮三声＝日+大T，两臂记双音（note.cuo）
+ *   其余单部件：木抹 丁打 尸劈 癶拨 厂历 犭猱 卜绰(翻转点朝上)
+ *   字形依据：用户琴书凡例（三页+特写+手书六轮校正）+维基54图交叉验证
+ *   仍待定：吟猱七细分写法 —— UNSURE 标记
  * ============================================================ */
 (function (global) {
   'use strict';
@@ -33,22 +34,19 @@
     '打圆': '打圆', '索铃': '索铃', '掐撮三声': '掐撮三声' // 三者均为手绘字，见 render
   };
   // 上下叠合的省文：反撮=反字头+早（谱字表）；背锁=北+巛、短锁=矢+巛（用户书证）；双弹=双+单（维基）
-  var STACK = { '反撮': ['⺁', '早'], '背锁': ['北', '巛'], '短锁': ['矢', '巛'], '双弹': ['双', '单'] };
-  var UNSURE = {
-    '长锁': 1, '如一声': 1, '双撞': 1,
-    '长吟': 1, '细吟': 1, '游吟': 1, '急吟': 1
-  };
+  var STACK = { '背锁': ['北', '巛'], '短锁': ['矢', '巛'], '双弹': ['双', '单'] };
+  var UNSURE = { '长吟': 1, '细吟': 1, '游吟': 1, '急吟': 1 }; // 吟猱细分写法书与维基均未载
   var ORN = {
     '绰': '卜', '注': '氵', '吟': '今', '猱': '犭', '上': '上', '下': '下', '引': '弓',
     '长吟': '长今', '细吟': '细今', '游吟': '游今', '急吟': '急今',
     '大猱': '大犭', '急猱': '急犭', '缓猱': '缓犭',
     '进复': '进复', '退复': '退复', '撞': '立', '双撞': '双立', '唤': '奂', // 进复/退复的复=复字上半,手绘
     '逗': '豆', '往来': '徕', '淌': '尚下', '分开': '分开',
-    '罨': '罨', '虚罨': '虚罨', '掐起': '掐起', '带起': '电', // 罨=冂框内人(人不冒头),手绘
+    '罨': '罨', '虚罨': '虚罨', '掐起': '掐起', '带起': '带起', // 罨=冂框内人(人不冒头),手绘
     '爪起': '爪起', '推出': '拙', '放合': '方合'
   };
   // 上下叠排的小字省文：起字家族（巳=起+顶部手指部件，维基证）；分开=⿱八开（用户书证）
-  var ORN_STACK = { '掐起': ['⺈', '巳'], '爪起': ['爫', '巳'], '分开': ['八', '开'] };
+  var ORN_STACK = { '掐起': ['⺈', '巳'], '爪起': ['爫', '巳'], '带起': ['巾', '巳'], '分开': ['八', '开'] };
 
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
@@ -56,6 +54,15 @@
     return '<text x="' + x + '" y="' + y + '" font-size="' + size +
       '" text-anchor="middle" dominant-baseline="middle"' +
       (cls ? ' class="' + cls + '"' : '') + '>' + esc(str) + '</text>';
+  }
+
+  // ── 组字文法·工艺律：真字体裁剪（取现成汉字的一部分，不手绘笔画）──
+  var CLIP_SEQ = 0;
+  function rectPts(x1, y1, x2, y2) { return x1 + ',' + y1 + ' ' + x2 + ',' + y1 + ' ' + x2 + ',' + y2 + ' ' + x1 + ',' + y2; }
+  function clipChar(ch, x, y, size, pts, cls) {
+    var id = 'jzc' + (++CLIP_SEQ);
+    return '<clipPath id="' + id + '"><polygon points="' + pts + '"/></clipPath>' +
+      '<g clip-path="url(#' + id + ')">' + text(x, y, size, ch, cls) + '</g>';
   }
 
   // 徽位显示：整徽="九"；带分="九二"上下叠；徽外="外"
@@ -111,104 +118,153 @@
       }
     }
 
-    // ── 下半（62~150）：右手指法 + 弦号 ──
-    var rGlyph = RIGHT[note.right || '挑'] || note.right || '?';
-    if (UNSURE[note.right]) warn = true;
+    // ── 下半：右手指法＋弦号（照 docs/减字组字文法.md 五大律组字）──
+    var R = note.right || '挑';
+    var rGlyph = RIGHT[R] || R || '?';
+    if (UNSURE[R]) warn = true;
     var strGlyph = NUM[note.string] || '?';
-    if (rGlyph === '勹') {
-      // 规律②：弦号嵌在勹口内（谱书"芶一"式），勹放大避免钩画压字
+
+    if (R === '勾') {
+      // 容器律：弦号嵌在勹口内（芶一式）
       parts.push(text(52, 58, 62, '勹'));
       parts.push(text(44, 66, 21, strGlyph));
-    } else if (rGlyph === '𠃓') {
-      // 剔的省文 𠃓 属 Unicode 扩展B区、多数字体缺字，手绘笔画：横折钩＋两撇（谱字表字形）
-      parts.push('<path d="M31 34 L69 34 L69 62 Q69 70 60 72" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"/>');
-      parts.push('<path d="M55 40 L35 68 M65 42 L47 71" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>');
-      parts.push(text(50, 92, 25, strGlyph));
-    } else if (note.right === '剌' || note.right === '泼剌') {
-      // 剌省文（用户校正）：束字去掉下面一撇一捺——横、口、竖贯穿。非现行汉字，手绘
-      var po = note.right === '泼剌';
-      if (po) parts.push(text(50, 34, 26, '癶'));
-      var ty = po ? 48 : 30, sc = po ? 0.72 : 1; // 泼剌时剌缩小下移
-      var bw = 13 * sc, bh = 10 * sc, hw = 17 * sc, vh = 26 * sc, bx = 50, by = ty + 22 * sc;
-      parts.push('<path d="M' + (bx - hw) + ' ' + (ty + 8 * sc) + ' L' + (bx + hw) + ' ' + (ty + 8 * sc) +
-        ' M' + (bx - bw) + ' ' + (by - bh) + ' L' + (bx + bw) + ' ' + (by - bh) + ' L' + (bx + bw) + ' ' + (by + bh) +
-        ' L' + (bx - bw) + ' ' + (by + bh) + ' Z M' + bx + ' ' + (ty - vh * 0.15) + ' L' + bx + ' ' + (by + bh + 12 * sc) +
-        '" fill="none" stroke="currentColor" stroke-width="' + (4.5 * (po ? 0.85 : 1)) + '" stroke-linejoin="round" stroke-linecap="round"/>');
-      parts.push(text(50, 96, 20, strGlyph));
-    } else if (note.right === '蠲') {
-      // 蠲省文（用户书证）：兴字去掉上面中间一点——两点、一横、八。非现行汉字，手绘
-      parts.push('<path d="M39 30 L43 39 M61 30 L57 39 M32 49 L68 49" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>');
-      parts.push('<path d="M46 57 Q40 70 30 78 M54 57 Q60 70 70 78" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>');
-      parts.push(text(50, 96, 20, strGlyph));
-    } else if (note.right === '打圆') {
-      // 打圆省文（用户校正）：口字框内一个「丁」（⿴囗丁），非现行汉字，手绘
-      parts.push('<path d="M30 30 L70 30 L70 74 L30 74 Z" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linejoin="round"/>');
-      parts.push(text(50, 53, 30, '丁'));
-      parts.push(text(50, 94, 21, strGlyph));
-    } else if (note.right === '索铃') {
-      // 索铃省文（书证特写）：索字头（十＋冖）＋令字底（龴＋丶），非现行汉字，手绘
-      parts.push('<path d="M50 24 L50 38 M40 31 L60 31 M34 47 L36 42 L64 42 L66 47" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>');
-      parts.push('<path d="M41 54 L59 54 L45 68 M54 58 L59 68" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>');
-      parts.push(text(50, 90, 22, strGlyph));
-    } else if (note.right === '掐撮三声') {
-      // 掐撮三声省文（书证特写）：爪字头＋曰＋长撇裹「三」的组合字，手绘＋叠字
-      parts.push(text(50, 27, 22, '爫'));
-      parts.push(text(50, 45, 19, '曰'));
-      parts.push('<path d="M40 55 Q34 70 25 79" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>');
-      parts.push(text(56, 68, 19, '三'));
-      parts.push(text(50, 96, 19, strGlyph));
-    } else if (note.right === '半轮') {
-      // 半轮省文非现行汉字（用户手书对照）：丷＋两横＋撇捺＋中竖钩（龹形加竖钩），手绘
-      parts.push('<path d="M40 30 L44 38 M60 30 L56 38 M35 46 L65 46 M30 56 L70 56" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>');
-      parts.push('<path d="M48 58 Q42 68 31 75 M52 58 Q58 68 69 75 M50 46 L50 80 Q50 86 43 84" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>');
-      parts.push(text(50, 98, 21, strGlyph));
-    } else if (STACK[note.right]) {
-      // 上下叠合省文（反撮/半轮）
-      var st = STACK[note.right];
-      parts.push(text(50, 42, 24, st[0]));
-      parts.push(text(50, 66, 28, st[1]));
-      parts.push(text(50, 94, 20, strGlyph));
+    } else if (R === '挑') {
+      // 容器律：弦号写在乚内
+      parts.push(text(50, 56, 62, '乚'));
+      parts.push(text(45, 54, 22, strGlyph));
+    } else if (R === '托') {
+      // 容器律：弦号写在乇的乚内
+      parts.push(text(48, 54, 56, '乇'));
+      parts.push(text(56, 68, 18, strGlyph));
+    } else if (R === '剔') {
+      // 剔＝勹左上角加小冂，弦号在勹内（用户书证）
+      parts.push(text(54, 60, 56, '勹'));
+      parts.push(text(28, 35, 14, '冂'));
+      parts.push(text(47, 67, 19, strGlyph));
+    } else if (R === '摘') {
+      // 截取律：啇去古去左下竖（亠＋丷＋冂框），弦号在框内
+      parts.push(text(50, 33, 19, '亠'));
+      parts.push(text(50, 43, 12, '丷'));
+      parts.push(text(50, 63, 36, '冂'));
+      parts.push(text(50, 66, 16, strGlyph));
+    } else if (R === '撮' || R === '反撮' || R === '掐撮三声') {
+      // 框架律：日＋大T，两臂记双音（左低右高）
+      var topCh = R === '反撮' ? '⺁' : R === '掐撮三声' ? '爫' : null;
+      var yy = topCh ? 7 : 0;
+      if (topCh) parts.push(text(50, 28, 16, topCh));
+      parts.push(text(50, 34 + yy, topCh ? 16 : 20, '日'));
+      parts.push(text(50, 48 + yy, topCh ? 30 : 34, '一'));
+      parts.push(text(50, 62 + yy, topCh ? 22 : 26, '丨'));
+      if (R === '掐撮三声') {
+        parts.push(clipChar('声', 32, 66 + yy, 22, rectPts(20, 66 + yy, 44, 80 + yy)));
+        parts.push(text(68, 71 + yy, 14, '三'));
+      } else {
+        var cuo = note.cuo || { lt: '勾', ls: 0, rt: '挑', rs: note.string };
+        parts.push(text(32, 64 + yy, 17, cuo.lt === '勾' ? '勹' : '乚'));
+        if (cuo.ls) parts.push(text(31, 79 + yy, 13, NUM[cuo.ls]));
+        parts.push(text(68, 64 + yy, 17, cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚'));
+        parts.push(text(69, 79 + yy, 13, NUM[cuo.rs] || strGlyph));
+      }
+    } else if (R === '打圆') {
+      // 打圆＝囗内换「打」的右半（丁）
+      parts.push(text(50, 53, 54, '囗'));
+      parts.push(text(50, 52, 24, '丁'));
+      parts.push(text(50, 94, 19, strGlyph));
+    } else if (R === '轮') {
+      // 輪右半去冂内艹：人＋一＋冂
+      parts.push(text(50, 34, 24, '人'));
+      parts.push(text(50, 46, 22, '一'));
+      parts.push(text(50, 62, 30, '冂'));
+      parts.push(text(50, 92, 19, strGlyph));
+    } else if (R === '半轮') {
+      // 卷去下部换冂：龹＋冂
+      parts.push(text(50, 42, 38, '龹'));
+      parts.push(text(50, 69, 24, '冂'));
+      parts.push(text(50, 95, 17, strGlyph));
+    } else if (R === '索铃') {
+      // 索去糸换令：十＋冖＋令
+      parts.push(text(50, 29, 16, '十'));
+      parts.push(text(50, 40, 24, '冖'));
+      parts.push(text(50, 60, 26, '令'));
+      parts.push(text(50, 92, 18, strGlyph));
+    } else if (R === '如一声') {
+      // 女下紧加一
+      parts.push(text(50, 42, 30, '女'));
+      parts.push(text(50, 59, 26, '一'));
+      parts.push(text(50, 88, 19, strGlyph));
+    } else if (R === '长锁') {
+      // 長的上半部分＋巛
+      parts.push(clipChar('長', 50, 44, 40, rectPts(28, 24, 72, 44)));
+      parts.push(text(50, 58, 20, '巛'));
+      parts.push(text(50, 88, 18, strGlyph));
+    } else if (R === '滚' || R === '滚拂') {
+      // 衮的上半部分（＋弗）
+      var gf = R === '滚拂';
+      parts.push(clipChar('衮', 50, gf ? 40 : 52, gf ? 40 : 52, rectPts(22, gf ? 20 : 26, 78, gf ? 42 : 55)));
+      if (gf) parts.push(text(50, 62, 28, '弗'));
+      parts.push(text(50, gf ? 94 : 88, 18, strGlyph));
+    } else if (R === '剌' || R === '泼剌') {
+      // 束去掉下面一撇一捺（裁去底部左右两角）
+      var po = R === '泼剌';
+      if (po) parts.push(text(50, 32, 22, '癶'));
+      var cy = po ? 62 : 52, cs = po ? 40 : 54;
+      var half = cs / 2, topY = cy - half, botY = cy + half, cutY = cy + cs * 0.1, aw = cs * 0.17;
+      parts.push(clipChar('束', 50, cy, cs,
+        (50 - half) + ',' + topY + ' ' + (50 + half) + ',' + topY + ' ' + (50 + half) + ',' + cutY + ' ' +
+        (50 + aw) + ',' + cutY + ' ' + (50 + aw) + ',' + botY + ' ' + (50 - aw) + ',' + botY + ' ' +
+        (50 - aw) + ',' + cutY + ' ' + (50 - half) + ',' + cutY));
+      parts.push(text(50, po ? 100 : 92, po ? 14 : 19, strGlyph));
+    } else if (R === '蠲') {
+      // 兴去掉上面中间一点（裁掉顶部中点区）
+      parts.push(clipChar('兴', 50, 52, 50, '25,27 44,27 44,43 56,43 56,27 75,27 75,80 25,80'));
+      parts.push(text(50, 92, 18, strGlyph));
+    } else if (STACK[R]) {
+      // 叠合律：两部件上下相叠
+      var st = STACK[R];
+      parts.push(text(50, 40, 22, st[0]));
+      parts.push(text(50, 63, 26, st[1]));
+      parts.push(text(50, 92, 18, strGlyph));
     } else {
-      // 规律④：弦号紧贴指法部件，融合成一个字
+      // 无围合空间：弦号贴写在指法正下方
       parts.push(text(50, 55, rGlyph.length > 1 ? 28 : 44, rGlyph));
       parts.push(text(50, 88, strGlyph.length > 1 ? 19 : 25, strGlyph));
     }
 
-    // ── 走音/装饰：右侧竖排小字（多字的缩小） ──
-    // 手绘小字：复字上半（𠂉＋日，用户校正"不是白"）
-    function fuTop(cx, cy) {
-      return '<path d="M' + (cx + 1) + ' ' + (cy - 9) + ' L' + (cx - 4) + ' ' + (cy - 5) +
-        ' M' + (cx - 4.5) + ' ' + (cy - 6) + ' L' + (cx + 4.5) + ' ' + (cy - 6) +
-        ' M' + (cx - 3.5) + ' ' + (cy - 3) + ' L' + (cx + 3.5) + ' ' + (cy - 3) + ' L' + (cx + 3.5) + ' ' + (cy + 7) +
-        ' L' + (cx - 3.5) + ' ' + (cy + 7) + ' Z M' + (cx - 3.5) + ' ' + (cy + 2) + ' L' + (cx + 3.5) + ' ' + (cy + 2) +
-        '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="jz-orn"/>';
-    }
-    // 手绘小字：罨＝冂框内一个人，人不冒头（用户校正"非内字"）
-    function yanGlyph(cx, cy, s) {
-      s = s || 1;
-      return '<path d="M' + (cx - 6 * s) + ' ' + (cy + 7 * s) + ' L' + (cx - 6 * s) + ' ' + (cy - 7 * s) +
-        ' L' + (cx + 6 * s) + ' ' + (cy - 7 * s) + ' L' + (cx + 6 * s) + ' ' + (cy + 7 * s) +
-        ' M' + cx + ' ' + (cy - 4 * s) + ' L' + (cx - 4 * s) + ' ' + (cy + 5 * s) +
-        ' M' + cx + ' ' + (cy - 4 * s) + ' L' + (cx + 4 * s) + ' ' + (cy + 5 * s) +
-        '" fill="none" stroke="currentColor" stroke-width="' + (1.9 * s) + '" stroke-linecap="round" stroke-linejoin="round" class="jz-orn"/>';
-    }
+    // ── 走音/装饰：右侧竖排小字（截取/叠合，全部真字体部件）──
     (note.orn || []).forEach(function (o, i) {
       var y = 46 + i * 19;
       if (o === '绰') {
-        // 绰＝卜但右点朝上（用户书证），与徽外的普通卜相区别——手绘
-        parts.push('<path d="M92 ' + (y - 8) + ' L92 ' + (y + 7) + ' M92 ' + (y + 1) + ' L97 ' + (y - 4) +
-          '" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" class="jz-orn"/>');
+        // 绰＝卜右点朝上（用户书证）：真字上下翻转
+        parts.push('<g transform="translate(0,' + (2 * y) + ') scale(1,-1)">' + text(92, y, 14, '卜', 'jz-orn') + '</g>');
         return;
       }
-      if (o === '罨') { parts.push(yanGlyph(92, y, 1)); return; }
-      if (o === '虚罨') {
-        parts.push(text(92, y - 6, 9, '虚', 'jz-orn'));
-        parts.push(yanGlyph(92, y + 7, 0.62));
+      if (o === '吟') {
+        // 截取律：今去人字头
+        parts.push(clipChar('今', 92, y - 3, 22, rectPts(84, y - 1, 100, y + 10), 'jz-orn'));
+        return;
+      }
+      if (o === '长吟' || o === '细吟' || o === '游吟' || o === '急吟') {
+        if (UNSURE[o]) warn = true;
+        parts.push(text(92, y - 6, 9, o.charAt(0), 'jz-orn'));
+        parts.push(clipChar('今', 92, y + 3, 17, rectPts(84, y + 5, 100, y + 13), 'jz-orn'));
         return;
       }
       if (o === '进复' || o === '退复') {
-        parts.push(text(92, y - 6, 9, o === '进复' ? '隹' : '艮', 'jz-orn'));
-        parts.push(fuTop(92, y + 8));
+        // 隹/艮＋复的上半部分
+        parts.push(text(92, y - 6, 10, o === '进复' ? '隹' : '艮', 'jz-orn'));
+        parts.push(clipChar('复', 92, y + 9, 19, rectPts(84, y, 100, y + 9), 'jz-orn'));
+        return;
+      }
+      if (o === '罨') {
+        // 冂内一个小人（人不冒头）
+        parts.push(text(92, y, 16, '冂', 'jz-orn'));
+        parts.push(text(92, y + 1, 8, '人', 'jz-orn'));
+        return;
+      }
+      if (o === '虚罨') {
+        parts.push(text(92, y - 6, 9, '虚', 'jz-orn'));
+        parts.push(text(92, y + 7, 11, '冂', 'jz-orn'));
+        parts.push(text(92, y + 8, 6, '人', 'jz-orn'));
         return;
       }
       if (ORN_STACK[o]) {

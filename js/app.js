@@ -444,6 +444,13 @@
         right = ['摘', '剔', '挑'][it.trip];       // 三连同音 = 轮的拆解
       } else if (it.final || it.long) {
         right = '撮';
+        // 撮＝双音框架（组字文法·框架律）：左臂勾低八度弦、右臂托/挑本音弦，与试听双弦齐鸣一致
+        var cuoS2 = semi - 12 >= 0 ? semi - 12 : semi + 12;
+        var cuoLow = 0;
+        for (var cuoI = 0; cuoI < 7; cuoI++) {
+          if (Math.abs(P.OPEN[cuoI] - cuoS2) < 0.01) { cuoLow = cuoI + 1; break; }
+        }
+        it.cuo = { lt: '勾', ls: cuoLow, rt: semi - 12 >= 0 ? '托' : '挑', rs: c.string };
       } else if (prev && prev.string === c.string && prevSemi !== null && Math.abs(prevSemi - semi) < 0.01) {
         right = (prev.right === '勾') ? '剔' :
                 (prev.right === '剔') ? '勾' :
@@ -760,6 +767,7 @@
             } else {
               note = candToNote(c, it.right, it.orn);
               if (it.fanMark) note.fanMark = it.fanMark;
+              if (it.cuo) note.cuo = it.cuo;
               stn.push({ semi: P.noteSemitone(note), dotted: t.dotted && lastInGroup });
             }
             jpRow += jpNoteHtml(n, t.dotted && lastInGroup, jpPre(it), !it.walk && c.type === 'fan');
