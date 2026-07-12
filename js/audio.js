@@ -237,9 +237,12 @@
 
   /* ── 走音组调度：一次拨弦 + 其后同弦滑动（同一声源改速率）──
    * grp = { head:{t,semi,orn,col,right,ntype,vel}, walks:[…] } */
+  var _drift = 0; // 时点微差用慢漂移（近1/f粉噪，心理声学：最悦耳的波动谱）
   function scheduleGroup(grp, t0, useSample) {
     var e = grp.head, semi = e.semi;
-    var when = t0 + e.t + (Math.random() - 0.5) * 0.016; // 人手微差：时点±8ms
+    _drift = _drift * 0.88 + (Math.random() - 0.5) * 0.006;
+    if (_drift > 0.014) _drift = 0.014; if (_drift < -0.014) _drift = -0.014;
+    var when = t0 + e.t + _drift; // 人手微差：漂移式而非机械抖动
     var src = ctx.createBufferSource();
     var rate, off = 0, segDur, out;
     if (useSample) {
