@@ -76,11 +76,19 @@ eq('慢角三弦散音=3(E)', P.semitoneToJianpu(P.sanSemitone(3)).text, '3');
 eq('慢角一弦散音=1(C)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1');
 P.setTuning('huangzhong'); // 慢一紧五：一弦 C→Bb,
 eq('黄钟一弦散音=低1(bB,)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1,');
-P.setTuning('manshang'); // 慢二：二弦=一弦同音
+P.setTuning('manshang'); // 慢二：二弦=一弦同音；弦法表调性 1=C（特写核对后由 F 改正）
 eq('慢商一二弦同音', P.sanSemitone(1) === P.sanSemitone(2), true);
+eq('慢商一弦散音=1(C)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1');
+eq('慢商三弦散音=4(F)', P.semitoneToJianpu(P.sanSemitone(3)).text, '4');
 P.setTuning('qiliang'); // 紧二五：二弦 D→bE、五弦 A→bB，1=bB（琴书弦法表）
 eq('凄凉五弦散音=1(bB)', P.semitoneToJianpu(P.sanSemitone(5)).text, '1');
 eq('凄凉二弦散音=低4(bE)', P.semitoneToJianpu(P.sanSemitone(2)).text, '4,');
+P.setTuning('biyu'); // 碧玉：紧三慢一四六——三四弦同为 #F（弦法表 6133561 互证）
+eq('碧玉三四弦同音', P.sanSemitone(3) === P.sanSemitone(4), true);
+eq('碧玉二弦散音=1(D)', P.semitoneToJianpu(P.sanSemitone(2)).text, '1');
+P.setTuning('qingshang'); // 清商：紧二五七，1=bE
+eq('清商七弦散音=高1(be)', P.semitoneToJianpu(P.sanSemitone(7)).text, "1'");
+eq('清商二弦散音=1(bE)', P.semitoneToJianpu(P.sanSemitone(2)).text, '1');
 P.setTuning('zheng');    // 还原
 eq('还原正调三弦=1(F)', P.semitoneToJianpu(P.sanSemitone(3)).text, '1');
 

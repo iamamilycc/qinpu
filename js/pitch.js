@@ -14,14 +14,24 @@
   'use strict';
 
   // ── 调弦法（各弦散音相对正调一弦 C 的半音数；key=简谱"1"的音高）──
+  // 全部十五调按琴书《古琴弦法表》核对（2026-07-12 特写照片，逐格确认）
+  // 调性双选的（间弦 C或♭B、无媒 C或G）取前者为记谱基准
   var TUNINGS = {
-    zheng:      { name: '正调 1=F',           open: [0, 2, 5, 7, 9, 12, 14],   key: 5,  flats: [10] },
-    ruibin:     { name: '蕤宾调·紧五 1=♭B',   open: [0, 2, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] },
-    manjiao:    { name: '慢角调·慢三 1=C',    open: [0, 2, 4, 7, 9, 12, 14],   key: 0,  flats: [] },
-    manshang:   { name: '慢商调·慢二 1=F',    open: [0, 0, 5, 7, 9, 12, 14],   key: 5,  flats: [10] },
-    huangzhong: { name: '黄钟调·慢一紧五 1=♭B', open: [-2, 2, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] },
-    // 琴书弦法表（2026-07-12 核对）：凄凉＝紧二五，C ♭E F G ♭B c d，别名楚商
-    qiliang:    { name: '凄凉调·紧二五 1=♭B',  open: [0, 3, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] }
+    zheng:      { name: '正调 1=F',            open: [0, 2, 5, 7, 9, 12, 14],   key: 5,  flats: [10] },
+    ruibin:     { name: '蕤宾调·紧五 1=♭B',    open: [0, 2, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] },
+    huangzhong: { name: '黄钟调·紧五慢一 1=♭B', open: [-2, 2, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] },
+    liyou:      { name: '离忧调·紧五慢一二 1=♭B', open: [-2, 0, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] },
+    qiliang:    { name: '凄凉调·紧二五 1=♭B',   open: [0, 3, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] },
+    manjiao:    { name: '慢角调·慢三 1=C',     open: [0, 2, 4, 7, 9, 12, 14],   key: 0,  flats: [] },
+    yunv:       { name: '玉女调·慢一三 1=C',   open: [-1, 2, 4, 7, 9, 12, 14],  key: 0,  flats: [] },
+    manshang:   { name: '慢商调·慢二 1=C',     open: [0, 0, 5, 7, 9, 12, 14],   key: 0,  flats: [10] },
+    jianxian:   { name: '间弦调·紧五慢三 1=C',  open: [0, 2, 4, 7, 10, 12, 14],  key: 0,  flats: [10] },
+    wumei:      { name: '无媒调·慢三六 1=C',   open: [0, 2, 4, 7, 9, 11, 14],   key: 0,  flats: [] },
+    mangong:    { name: '慢宫调·慢一三六 1=G',  open: [-1, 2, 4, 7, 9, 11, 14],  key: 7,  flats: [] },
+    shangdiao:  { name: '商调·慢一三四六 1=D',  open: [-1, 2, 4, 6, 9, 11, 14],  key: 2,  flats: [] },
+    ceshang:    { name: '侧商调·慢三四六 1=D',  open: [0, 2, 4, 6, 9, 11, 14],   key: 2,  flats: [] },
+    biyu:       { name: '碧玉调·紧三慢一四六 1=D', open: [-1, 2, 6, 6, 9, 11, 14], key: 2, flats: [] },
+    qingshang:  { name: '清商调·紧二五七 1=♭E', open: [0, 3, 5, 7, 10, 12, 15],  key: 3,  flats: [10, 3, 8] }
   };
   var CUR_TUNING = 'zheng';
 
