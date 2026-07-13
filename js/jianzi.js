@@ -163,8 +163,8 @@
       parts.push(text(56, 68, 18, strGlyph));
     } else if (R === '剔') {
       // 剔（GlyphWiki 字形优先，弦号置于开口内；兜底：勹＋小冂拼装）
-      var GTi = gw('剔', 52, 54, 56);
-      if (GTi) { parts.push(GTi); parts.push(text(38, 74, 18, strGlyph)); }
+      var GTi = gw('剔', 51, 55, 62);
+      if (GTi) { parts.push(GTi); parts.push(text(37, 76, 18, strGlyph)); }
       else {
         parts.push(text(54, 60, 56, '勹'));
         parts.push(text(28, 35, 14, '冂'));
@@ -172,8 +172,8 @@
       }
     } else if (R === '摘') {
       // 摘（GlyphWiki 字形优先，弦号置于框口内；兜底：亠＋丷＋冂拼装）
-      var GZh = gw('摘', 50, 54, 56);
-      if (GZh) { parts.push(GZh); parts.push(text(42, 72, 17, strGlyph)); }
+      var GZh = gw('摘', 50, 55, 62);
+      if (GZh) { parts.push(GZh); parts.push(text(41, 74, 17, strGlyph)); }
       else {
         parts.push(text(50, 33, 19, '亠'));
         parts.push(text(50, 43, 12, '丷'));
