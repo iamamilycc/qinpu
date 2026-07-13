@@ -143,24 +143,32 @@
       parts.push(text(52, 58, 62, '勹'));
       parts.push(text(44, 66, 21, strGlyph));
     } else if (R === '挑') {
-      // 容器律：弦号写在乚内
-      parts.push(text(50, 56, 62, '乚'));
-      parts.push(text(45, 54, 22, strGlyph));
+      // 容器律：弦号写在乚内（弦号靠右避开竖画）
+      parts.push(text(48, 56, 62, '乚'));
+      parts.push(text(54, 52, 22, strGlyph));
     } else if (R === '托') {
       // 容器律：弦号写在乇的乚内
       parts.push(text(48, 54, 56, '乇'));
       parts.push(text(56, 68, 18, strGlyph));
     } else if (R === '剔') {
-      // 剔＝勹左上角加小冂，弦号在勹内（用户书证）
-      parts.push(text(54, 60, 56, '勹'));
-      parts.push(text(28, 35, 14, '冂'));
-      parts.push(text(47, 67, 19, strGlyph));
+      // 剔（GlyphWiki 字形优先，弦号置于开口内；兜底：勹＋小冂拼装）
+      var GTi = gw('剔', 52, 52, 56);
+      if (GTi) { parts.push(GTi); parts.push(text(38, 72, 18, strGlyph)); }
+      else {
+        parts.push(text(54, 60, 56, '勹'));
+        parts.push(text(28, 35, 14, '冂'));
+        parts.push(text(47, 67, 19, strGlyph));
+      }
     } else if (R === '摘') {
-      // 截取律：啇去古去左下竖（亠＋丷＋冂框），弦号在框内
-      parts.push(text(50, 33, 19, '亠'));
-      parts.push(text(50, 43, 12, '丷'));
-      parts.push(text(50, 63, 36, '冂'));
-      parts.push(text(50, 66, 16, strGlyph));
+      // 摘（GlyphWiki 字形优先，弦号置于框口内；兜底：亠＋丷＋冂拼装）
+      var GZh = gw('摘', 50, 52, 56);
+      if (GZh) { parts.push(GZh); parts.push(text(42, 70, 17, strGlyph)); }
+      else {
+        parts.push(text(50, 33, 19, '亠'));
+        parts.push(text(50, 43, 12, '丷'));
+        parts.push(text(50, 63, 36, '冂'));
+        parts.push(text(50, 66, 16, strGlyph));
+      }
     } else if (R === '掐撮三声' && gw('掐撮三声', 50, 50, 60)) {
       // GlyphWiki 整字（爫＋早＋三 合体）
       parts.push(gw('掐撮三声', 50, 50, 60));
@@ -200,10 +208,11 @@
       }
       parts.push(text(50, 92, 19, strGlyph));
     } else if (R === '半轮') {
-      // 卷去下部换冂：龹＋冂
-      parts.push(text(50, 42, 38, '龹'));
-      parts.push(text(50, 69, 24, '冂'));
-      parts.push(text(50, 95, 17, strGlyph));
+      // 半轮（GlyphWiki 字形优先；兜底：龹＋冂拼装）
+      var GBl = gw('半轮', 50, 50, 54);
+      if (GBl) parts.push(GBl);
+      else { parts.push(text(50, 42, 38, '龹')); parts.push(text(50, 69, 24, '冂')); }
+      parts.push(text(50, 94, 17, strGlyph));
     } else if (R === '索铃') {
       // 索去糸换令：十＋冖＋令
       parts.push(text(50, 29, 16, '十'));
