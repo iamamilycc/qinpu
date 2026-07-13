@@ -39,7 +39,7 @@
   var ORN = {
     '绰': '卜', '注': '氵', '吟': '今', '猱': '犭', '上': '上', '下': '下', '引': '弓',
     '长吟': '长今', '细吟': '细今', '游吟': '游今', '急吟': '急今',
-    '大猱': '大犭', '急猱': '急犭', '缓猱': '缓犭',
+    '大猱': '大犭', '急猱': '刍犭', '缓猱': '爰犭',
     '进复': '进复', '退复': '退复', '撞': '立', '双撞': '双立', '唤': '奂', // 进复/退复的复=复字上半,手绘
     '逗': '豆', '往来': '徕', '淌': '尚下', '分开': '分开',
     '罨': '罨', '虚罨': '虚罨', '掐起': '掐起', '带起': '带起', // 罨=冂框内人(人不冒头),手绘
@@ -176,22 +176,26 @@
       parts.push(gw('掐撮三声', 50, 50, 60));
       parts.push(text(50, 96, 17, strGlyph));
     } else if (R === '撮' || R === '反撮' || R === '掐撮三声') {
-      // 框架律：日＋大T，两臂记双音（左低右高）
-      var topCh = R === '反撮' ? '⺁' : R === '掐撮三声' ? '爫' : null;
-      var yy = topCh ? 7 : 0;
-      if (topCh) parts.push(text(50, 28, 16, topCh));
-      parts.push(text(50, 34 + yy, topCh ? 16 : 20, '日'));
-      parts.push(text(50, 48 + yy, topCh ? 30 : 34, '一'));
-      parts.push(text(50, 62 + yy, topCh ? 22 : 26, '丨'));
+      // 框架律：撮＝「早」减写为框架（GlyphWiki 专业字形），大T两臂记双音（左低右高）
+      var topCh2 = R === '反撮' ? gw('反', 50, 22, 17) : R === '掐撮三声' ? text(50, 22, 15, '爫') : null;
+      var yy = topCh2 ? 8 : 0;
+      if (topCh2) parts.push(topCh2);
+      var GZao = gw('早', 50, 42 + yy, topCh2 ? 40 : 48);
+      if (GZao) parts.push(GZao);
+      else {
+        parts.push(text(50, 30 + yy, topCh2 ? 16 : 20, '日'));
+        parts.push(text(50, 44 + yy, topCh2 ? 30 : 34, '一'));
+        parts.push(text(50, 56 + yy, topCh2 ? 22 : 26, '丨'));
+      }
       if (R === '掐撮三声') {
-        parts.push(clipChar('声', 32, 66 + yy, 22, rectPts(20, 66 + yy, 44, 80 + yy)));
-        parts.push(text(68, 71 + yy, 14, '三'));
+        parts.push(clipChar('声', 32, 72 + yy, 22, rectPts(20, 72 + yy, 44, 86 + yy)));
+        parts.push(text(68, 77 + yy, 14, '三'));
       } else {
         var cuo = note.cuo || { lt: '勾', ls: 0, rt: '挑', rs: note.string };
-        parts.push(text(32, 64 + yy, 17, cuo.lt === '勾' ? '勹' : '乚'));
-        if (cuo.ls) parts.push(text(31, 79 + yy, 13, NUM[cuo.ls]));
-        parts.push(text(68, 64 + yy, 17, cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚'));
-        parts.push(text(69, 79 + yy, 13, NUM[cuo.rs] || strGlyph));
+        parts.push(text(31, 74 + yy, 16, cuo.lt === '勾' ? '勹' : '乚'));
+        if (cuo.ls) parts.push(text(30, 88 + yy, 12, NUM[cuo.ls]));
+        parts.push(text(69, 74 + yy, 16, cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚'));
+        parts.push(text(70, 88 + yy, 12, NUM[cuo.rs] || strGlyph));
       }
     } else if (R === '打圆') {
       // 打圆＝囗内丁（GlyphWiki 部件，兜底字体拼装）
@@ -310,8 +314,11 @@
       }
       if (o === '长吟' || o === '细吟' || o === '游吟' || o === '急吟') {
         if (UNSURE[o]) warn = true;
-        parts.push(text(92, y - 6, 9, o.charAt(0), 'jz-orn'));
-        parts.push(clipChar('今', 92, y + 3, 17, rectPts(84, y + 5, 100, y + 13), 'jz-orn'));
+        var yPre = { '长吟': '镸', '急吟': '刍', '细吟': '细', '游吟': '游' }[o];
+        parts.push(text(92, y - 6, 9, yPre, 'jz-orn'));
+        var GYin = gw('吟', 92, y + 6, 13, 'jz-orn');
+        if (GYin) parts.push(GYin);
+        else parts.push(clipChar('今', 92, y + 3, 17, rectPts(84, y + 5, 100, y + 13), 'jz-orn'));
         return;
       }
       if (o === '进复' || o === '退复') {
