@@ -208,6 +208,7 @@
       <button onclick="pickScorePhoto()">📷 拍谱识谱（AI）</button>
       <button onclick="loadDemo()">示例：普庵咒</button>
       <button onclick="loadDemo2()">示例：关山月</button>
+      <button onclick="loadDemo3()">示例：高山·页1(待校)</button>
       <button onclick="saveToLib('p2j')">💾 存入曲库</button>
       <button onclick="openLib()">📂 我的曲库</button>
       <button onclick="shareLink('p2j')">🔗 分享链接</button>
@@ -226,8 +227,22 @@
       <button onclick="playB()">▶ 试听（真琴采样）</button>
       <button onclick="stopPlay()">⏹ 停止</button>
       <button onclick="printScore('B')">🖨 打印 / 存PDF</button>
+      <button onclick="openVertical()">📜 竖排减字谱</button>
       <span style="align-self:center;font-size:.85rem;color:#6d5f47">🐢 <input type="range" class="spd-range" min="50" max="150" value="100" step="5" style="vertical-align:middle;width:110px" oninput="setSpeed(this.value)"> <span class="spd-label">原速</span></span>
     </div>
+    <div class="btn-row" style="margin-bottom:8px;align-items:center">
+      <span style="font-size:.88rem;color:#6d5f47">🔁 第</span>
+      <input id="loopA" type="number" min="1" value="1" style="width:56px;padding:6px;border:1px solid var(--line);border-radius:6px">
+      <span style="font-size:.88rem;color:#6d5f47">–</span>
+      <input id="loopB" type="number" min="1" value="4" style="width:56px;padding:6px;border:1px solid var(--line);border-radius:6px">
+      <span style="font-size:.88rem;color:#6d5f47">小节</span>
+      <button onclick="playLoop()">循环播放</button>
+      <span style="font-size:.88rem;color:#6d5f47;margin-left:10px">👣 跟弹：</span>
+      <button onclick="stepPlay(-1)">◀ 上一音</button>
+      <button onclick="stepPlay(1)">▶ 下一音</button>
+      <button onclick="stepReset()">⏮ 重头</button>
+    </div>
+    <p id="stepInfo" class="note"></p>
     <div id="scoreB" class="score"></div>
     <p class="note">💡 换「编配画像」即生成另一版减字谱（宏=散音骨架铺开／圆=按音走韵连贯／远=泛音清冷），「韵味」控制吟猱绰注密度——一首简谱可出多版对比。自动编配仍只是参考弹法。同一个音古琴上常有多种弹法——<b>点击任一减字，全部弹法会弹出菜单供选择</b>（选中即试听该音）。</p>
   </section>
@@ -312,6 +327,14 @@
 <footer>琴谱通 · 减字谱⇄简谱转换 · 音高可算，韵味在人</footer>
 
 <script src="js/pitch.js"></script>
+<div id="vertModal" style="display:none;position:fixed;inset:0;background:rgba(30,25,15,.45);z-index:60" onclick="if(event.target===this)closeVertical()">
+  <div style="max-width:92vw;margin:6vh auto;background:var(--card,#fdfaf2);border-radius:12px;padding:16px 18px;max-height:82vh;overflow:auto">
+    <h3 style="margin:0 0 8px">📜 竖排减字谱（右起竖读，古籍式）
+      <button onclick="printVertical()" style="margin-left:12px">🖨 打印</button>
+      <span style="float:right;cursor:pointer;font-size:1.1rem" onclick="closeVertical()">✕</span></h3>
+    <div id="vertBody" style="overflow-x:auto"></div>
+  </div>
+</div>
 <div id="libModal" style="display:none;position:fixed;inset:0;background:rgba(30,25,15,.45);z-index:60" onclick="if(event.target===this)closeLib()">
   <div style="max-width:520px;margin:9vh auto;background:var(--card,#fdfaf2);border-radius:12px;padding:18px 20px;max-height:74vh;overflow:auto">
     <h3 style="margin:0 0 10px">📂 我的曲库<span style="float:right;cursor:pointer;font-size:1.1rem" onclick="closeLib()">✕</span></h3>

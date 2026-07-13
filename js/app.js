@@ -1073,6 +1073,9 @@
       });
     });
     if (ev.length > phraseStart) applyPhraseArch(ev, phraseStart, ev.length); // 末句
+    var colBar = {}, bn = 1;
+    tokensB.forEach(function (t, i) { colBar[i + 1] = bn; if (t.kind === 'bar') bn++; });
+    ev.forEach(function (e) { if (e.col != null) e.bar = colBar[e.col] || 1; });
     return ev;
   }
 
@@ -1083,6 +1086,9 @@
       ev.push({ t: t, semi: P.noteSemitone(it.note), col: null, orn: it.note.orn, dur: SPB, str: it.note.string, vel: (ev.length % 2 === 0 ? 0.95 : 0.65), right: it.note.right, ntype: it.note.type });
       t += SPB;
     });
+    var colBar = {}, bn = 1;
+    tokensB.forEach(function (t, i) { colBar[i + 1] = bn; if (t.kind === 'bar') bn++; });
+    ev.forEach(function (e) { if (e.col != null) e.bar = colBar[e.col] || 1; });
     return ev;
   }
 
@@ -1096,7 +1102,7 @@
 
   window.playB = function () { window.QinAudio.playSeq(eventsFromB(), highlightB); };
   window.playA = function () { window.QinAudio.playSeq(eventsFromA(), null); };
-  window.stopPlay = function () { window.QinAudio.stop(); highlightB(null); };
+  window.stopPlay = function () { window._looping = false; clearTimeout(window._loopTimer); window.QinAudio.stop(); highlightB(null); };
   window.playCurrent = function () {
     var note = currentNoteFromForm();
     var s = P.noteSemitone(note);
@@ -1265,6 +1271,93 @@
       $('tutTerms').innerHTML = h;
     }
   }
+
+  /* ══════════ AB 小节循环 / 逐音跟弹 / 竖排减字 ══════════ */
+  window.playLoop = function () {
+    var a = parseInt($('loopA').value, 10) || 1, b = parseInt($('loopB').value, 10) || a;
+    if (b < a) { var tmp = a; a = b; b = tmp; }
+    var evs = eventsFromB().filter(function (e) { return e.bar >= a && e.bar <= b; });
+    while (evs.length && evs[0].glideFrom != null) evs.shift(); // 掐头的走音失去本体，丢弃
+    if (!evs.length) { alert('第 ' + a + '–' + b + ' 小节里没有音，检查小节号'); return; }
+    var t0 = evs[0].t;
+    evs = evs.map(function (e) { var c = Object.assign({}, e); c.t -= t0; return c; });
+    var last = evs[evs.length - 1];
+    var cycle = last.t + (last.dur || 1) + 0.8;
+    window._looping = true;
+    (function once() {
+      if (!window._looping) return;
+      window.QinAudio.playSeq(evs, highlightB);
+      window._loopTimer = setTimeout(once, cycle * 1000);
+    })();
+  };
+
+  var _stepIdx = -1;
+  window.stepReset = function () { _stepIdx = -1; $('stepInfo').textContent = ''; highlightB(null); };
+  window.stepPlay = function (d) {
+    var evs = eventsFromB();
+    if (!evs.length) { alert('先转换出谱再跟弹'); return; }
+    _stepIdx = Math.min(Math.max(_stepIdx + d, 0), evs.length - 1);
+    var e = Object.assign({}, evs[_stepIdx]);
+    e.t = 0; e.glideFrom = null;
+    window.QinAudio.playSeq([e], null);
+    highlightB(e.col);
+    var cell = document.querySelector('#scoreB [data-col="' + e.col + '"] svg.jianzi');
+    $('stepInfo').textContent = '👣 第 ' + (_stepIdx + 1) + '/' + evs.length + ' 音' +
+      (cell ? '：' + (cell.getAttribute('aria-label') || '') : '');
+    if (cell) cell.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  };
+
+  function verticalHtml(sizePx) {
+    var cells = [];
+    notesB.forEach(function (it) {
+      var note;
+      if (it.custom) note = it.custom;
+      else if (it.walk) note = { type: 'walk', dir: it.walk.dir, hui: it.walk.hui, fen: it.walk.fen };
+      else {
+        var c = it.cands[it.pick];
+        if (!c) return;
+        note = candToNote(c, it.right, it.orn);
+        if (it.fanMark) note.fanMark = it.fanMark;
+        if (it.cuo) note.cuo = it.cuo;
+      }
+      cells.push(J.render(note, sizePx || 52, {}));
+    });
+    if (!cells.length) return '';
+    var per = 8, cols = [];
+    for (var i = 0; i < cells.length; i += per) cols.push(cells.slice(i, i + per));
+    var h = '<div style="display:flex;flex-direction:row-reverse;justify-content:flex-start;gap:6px;min-width:max-content;padding:6px 2px">';
+    cols.forEach(function (col) {
+      h += '<div style="display:flex;flex-direction:column;gap:3px">' + col.join('') + '</div>';
+    });
+    return h + '</div>';
+  }
+  window.openVertical = function () {
+    var h = verticalHtml(52);
+    if (!h) { alert('谱面还是空的，先转换出谱。'); return; }
+    $('vertBody').innerHTML = h;
+    $('vertModal').style.display = 'block';
+    $('vertBody').scrollLeft = $('vertBody').scrollWidth; // 从最右（谱首）看起
+  };
+  window.closeVertical = function () { $('vertModal').style.display = 'none'; };
+  window.printVertical = function () {
+    var w = window.open('', '_blank');
+    if (!w) { alert('浏览器拦截了弹窗，请允许后重试。'); return; }
+    var href = document.querySelector('link[rel="stylesheet"]').href;
+    w.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">' +
+      '<title>琴谱通 · 竖排减字谱</title><link rel="stylesheet" href="' + href + '">' +
+      '<style>body{background:#fff;max-width:none;padding:16px}</style></head><body>' +
+      verticalHtml(46) +
+      '<p style="text-align:center;color:#a89877;font-size:12px">琴谱通 iamamilycc.github.io/qinpu</p>' +
+      '</body></html>');
+    w.document.close();
+    setTimeout(function () { try { w.print(); } catch (e) {} }, 500);
+  };
+
+  // 示例：高山（徐元白打谱·春草堂琴谱1744）第 1/7 页——转录待与原谱核校
+  window.loadDemo3 = function () {
+    $('inJianpu').value = '2/4 T=30 5, 5, | 5, - | 5,. 1_ 6,_ | {5,}5,_ 6,_ 1 | 1. 5_ 3_ | 2 3_3_ / 5, 5, | 3. 2=1= | 6,_1_ 2_1_ | 1 1 - | 5 5,. 1_6,_ | 5, 5 - / T=54 5 5 - | 6=5=3=2=1=6= 5 | 5 - | 5 - 6_1_ | 5 5 - / (555) 5_5_ | 5_6_ 1_2_ | 1_6_ 1 | 1 - | 2 - | 3. 5_ / 5 6_5_ | 3 - | 2_3_ 2_1_ | 6,_ 6_5_ | 6 6_1_ | 2 3_5_ | 3. 5_ 3_2_ / 1_2_ 1 | 1 - | 3 3_5_ | 6_1_ 6 | 6 - | 5 - 5_6_ | 1 - ||';
+    convertJianpu();
+  };
 
   /* ══════════ 试听速度 / 本地曲库 / 分享链接 ══════════ */
   window._spdScale = 1;
