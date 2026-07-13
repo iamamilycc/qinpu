@@ -114,7 +114,9 @@
       parts.push(text(50, 14, 36, '艹'));
     } else {
       var lf = LEFT[note.left || '大'] || '大';
-      parts.push(text(28, 17, 27, lf));
+      var GLf = note.left === '跪' ? gw('跪', 28, 17, 28) : null;
+      if (GLf) parts.push(GLf);
+      else parts.push(text(28, 17, 27, lf));
       parts.push(huiGlyph(note, 71, 1, 33));
     }
     if (note.type === 'fan') {
@@ -214,10 +216,14 @@
       else { parts.push(text(50, 42, 38, '龹')); parts.push(text(50, 69, 24, '冂')); }
       parts.push(text(50, 94, 17, strGlyph));
     } else if (R === '索铃') {
-      // 索去糸换令：十＋冖＋令
-      parts.push(text(50, 29, 16, '十'));
-      parts.push(text(50, 40, 24, '冖'));
-      parts.push(text(50, 60, 26, '令'));
+      // 索铃（GlyphWiki xicheng 字形；兜底：十＋冖＋令拼装）
+      var GSl = gw('索铃', 50, 50, 54);
+      if (GSl) parts.push(GSl);
+      else {
+        parts.push(text(50, 29, 16, '十'));
+        parts.push(text(50, 40, 24, '冖'));
+        parts.push(text(50, 60, 26, '令'));
+      }
       parts.push(text(50, 92, 18, strGlyph));
     } else if (R === '如一声') {
       // 女下紧加一（GlyphWiki 部件，兜底字体拼装）
@@ -226,9 +232,13 @@
       else { parts.push(text(50, 42, 30, '女')); parts.push(text(50, 59, 26, '一')); }
       parts.push(text(50, 88, 19, strGlyph));
     } else if (R === '长锁') {
-      // 長的上半部分＋巛
-      parts.push(clipChar('長', 50, 44, 40, rectPts(28, 24, 72, 44)));
-      parts.push(text(50, 58, 20, '巛'));
+      // 长锁（GlyphWiki xicheng 字形＝镸＋巛；兜底：長上半裁剪＋巛）
+      var GCs = gw('长锁', 50, 50, 54);
+      if (GCs) parts.push(GCs);
+      else {
+        parts.push(clipChar('長', 50, 44, 40, rectPts(28, 24, 72, 44)));
+        parts.push(text(50, 58, 20, '巛'));
+      }
       parts.push(text(50, 88, 18, strGlyph));
     } else if (R === '滚' || R === '滚拂') {
       // 衮的上半部分（＋弗）——GlyphWiki 整字部件，兜底真字裁剪
