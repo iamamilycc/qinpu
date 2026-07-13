@@ -12,21 +12,25 @@
   <h1>琴谱通</h1>
   <p class="sub">古琴减字谱 ⇄ 简谱 · 双向转换
     <select id="selTuning" class="tuning-sel" title="调弦法">
-      <option value="zheng" selected>正调 1=F</option>
-      <option value="ruibin">蕤宾调·紧五 1=♭B</option>
-      <option value="huangzhong">黄钟调·紧五慢一 1=♭B</option>
-      <option value="liyou">离忧调·紧五慢一二 1=♭B</option>
-      <option value="qiliang">凄凉调·紧二五 1=♭B</option>
-      <option value="manjiao">慢角调·慢三 1=C</option>
-      <option value="yunv">玉女调·慢一三 1=C</option>
-      <option value="manshang">慢商调·慢二 1=C</option>
-      <option value="jianxian">间弦调·紧五慢三 1=C</option>
-      <option value="wumei">无媒调·慢三六 1=C</option>
-      <option value="mangong">慢宫调·慢一三六 1=G</option>
-      <option value="shangdiao">商调·慢一三四六 1=D</option>
-      <option value="ceshang">侧商调·慢三四六 1=D</option>
-      <option value="biyu">碧玉调·紧三慢一四六 1=D</option>
-      <option value="qingshang">清商调·紧二五七 1=♭E</option>
+      <optgroup label="常用">
+        <option value="zheng" selected>正调 1=F</option>
+        <option value="ruibin">蕤宾调·紧五 1=♭B</option>
+        <option value="manjiao">慢角调·慢三 1=C</option>
+        <option value="huangzhong">黄钟调·紧五慢一 1=♭B</option>
+        <option value="qiliang">凄凉调·紧二五 1=♭B</option>
+      </optgroup>
+      <optgroup label="更多（弦法表全录）">
+        <option value="liyou">离忧调·紧五慢一二 1=♭B</option>
+        <option value="yunv">玉女调·慢一三 1=C</option>
+        <option value="manshang">慢商调·慢二 1=C</option>
+        <option value="jianxian">间弦调·紧五慢三 1=C</option>
+        <option value="wumei">无媒调·慢三六 1=C</option>
+        <option value="mangong">慢宫调·慢一三六 1=G</option>
+        <option value="shangdiao">商调·慢一三四六 1=D</option>
+        <option value="ceshang">侧商调·慢三四六 1=D</option>
+        <option value="biyu">碧玉调·紧三慢一四六 1=D</option>
+        <option value="qingshang">清商调·紧二五七 1=♭E</option>
+      </optgroup>
     </select></p>
 </header>
 
@@ -41,6 +45,7 @@
 <main id="panel-j2p" class="panel">
   <section class="card">
     <h2>① 粘贴文字减字谱（琴人口述格式）</h2>
+    <input id="titleA" placeholder="曲名 · 出处/打谱人（可空，随谱打印）" style="width:100%;margin-bottom:6px;padding:8px;border:1px solid var(--line);border-radius:8px;font-family:inherit">
     <textarea id="jzTextIn" rows="2" placeholder="例：散勾一 勾二 挑三 | 名九挑四 上七六 大七六托五 泛七挑一"></textarea>
     <div class="btn-row" style="margin-top:6px">
       <button class="primary" onclick="parseJzText()">📜 解析生成简谱</button>
@@ -191,6 +196,7 @@
 <main id="panel-p2j" class="panel" style="display:none">
   <section class="card">
     <h2>① 输入简谱旋律</h2>
+    <input id="titleB" placeholder="曲名 · 出处/打谱人（可空，随谱打印）" style="width:100%;margin-bottom:6px;padding:8px;border:1px solid var(--line);border-radius:8px;font-family:inherit">
     <textarea id="inJianpu" rows="3" placeholder="例：2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3"></textarea>
     <p class="note">记法：<b>|</b> 小节线　<b>2/4</b> 拍号　<b>1.</b> 附点　<b>-</b> 延音　<b>0</b> 休止　<b>1'</b> 高八度　<b>1,</b> 低八度　<b>#4</b> 升半音　<b>连写 12</b> = 八分音符组　<b>b3</b> 降半音　<b>6_</b> 单八分　<b>1._</b> 附点八分　<b>2222=</b>/<b>6=</b> 十六分　<b>(555)</b> 三连音　<b>0_ 0=</b> 短休止　<b>5^</b> 延长号　<b>T=60</b> 速度　<b>{3}5</b> 倚音　<b>5~ 5</b> 连音线　<b>/</b> 换行　<b>|:</b> <b>:|</b> 反复　<b>[1</b> <b>]</b> <b>[2</b> 一/二房（试听自动按反复顺序展开）</p>
     <div class="btn-row">
@@ -205,7 +211,6 @@
         <option value="0.3">韵味：淡</option>
         <option value="0.9">韵味：浓</option>
       </select>
-      <button onclick="pickScorePhoto()">📷 拍谱识谱（AI）</button>
       <button onclick="loadDemo()">示例：普庵咒</button>
       <button onclick="loadDemo2()">示例：关山月</button>
       <button onclick="loadDemo3()">示例：高山·页1(待校)</button>
@@ -213,6 +218,9 @@
       <button onclick="openLib()">📂 我的曲库</button>
       <button onclick="shareLink('p2j')">🔗 分享链接</button>
     </div>
+    <details style="margin-top:8px"><summary style="cursor:pointer;font-size:.88rem;color:#8a7c62">高级：📷 拍谱识谱（需自备 AI 的 API Key，按量计费）</summary>
+      <div style="margin-top:6px"><button onclick="pickScorePhoto()">📷 选择谱面照片</button></div>
+    </details>
     <input type="file" id="scorePhotoIn" accept="image/*" capture="environment" style="display:none" onchange="onScorePhoto(this)">
     <div id="apiKeyRow" style="display:none; margin-top:8px">
       <input type="password" id="apiKeyIn" placeholder="sk-ant-…(Claude) 或 sk-…(OpenAI)，只存本机" style="width:70%; padding:7px 8px; border:1px solid var(--line); border-radius:6px">
@@ -313,6 +321,7 @@
       <li><b>指法编配</b>：简谱→减字谱按琴人惯例自动编配——散按结合就近取位、低弦勾高弦挑、重复音勾剔/抹挑交替、小节头低弦散音用托、句尾长音用撮、按音上行加绰下行加注、长音加吟、高音恰逢泛音位则取泛音。仍只是<b>一种</b>参考弹法，不是唯一答案，更不能替代老师；点击任一减字可弹出全部弹法菜单选择。</li>
       <li><b>徽分</b>：按十二平均律计算到「徽分」（相邻两徽十等分），实际演奏以耳定音。</li>
       <li><b>字形</b>：部分减字省文（挑、剔、摘、擘等）字形尚在校对中，暂以全字或近似部件显示。</li>
+      <li><b>字形来源</b>：减字字形取自 GlyphWiki（自由授权），部分依琴书凡例校订；真琴采样 CC-BY（详见下）。<b>谱有误？</b>欢迎到 <a href="https://github.com/iamamilycc/qinpu/issues" target="_blank">GitHub 反馈</a>。</li>
       <li><b>练琴三件套</b>：🐢速度滑块（50%–150% 慢练/快检）；谱内任意位置写 <b>T=NN</b> 可中途变速（散起入调各一速）；<b>💾曲库</b>把谱存在本机浏览器、<b>🔗分享链接</b>把谱编进网址发给琴友（无需注册，打开即见谱可试听）。</li>
       <li><b>定弦</b>：琴书《古琴弦法表》十五调全部支持——正调、蕤宾（紧五·金羽）、黄钟（紧五慢一·无射）、离忧、凄凉（紧二五·楚商）、慢角、玉女、慢商（慢二·广陵散）、间弦、无媒（泉鸣）、慢宫、商调、侧商、碧玉（三四弦同音♯F）、清商（姑洗）。页顶下拉切换，全站（转换/五线谱调号/试听）联动，示例曲为正调。间弦调性书载「C或♭B」、无媒「C或G」，本站取前者记谱；1=G/D 各调的升号音以临时记号显示。</li>
       <li><b>五线谱行</b>：简化版（低音谱表、F大调）——音高、符桿、八分符杠、附点齐全；三连音、延音线、装饰音记号暂未绘制。</li>

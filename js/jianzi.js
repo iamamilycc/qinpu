@@ -91,6 +91,11 @@
     }
     var huiStr = NUM[note.hui] || '?';
     if (note.fen && note.fen > 0) {
+      // 徽分合体字（GlyphWiki xicheng 数字系列：00＋徽hex＋分hex）；兜底两数竖叠
+      if (note.hui <= 13 && note.fen <= 9) {
+        var GHF = gw('xc_00' + note.hui.toString(16) + note.fen.toString(16), x, yTop + h * 0.52, 30);
+        if (GHF) return GHF;
+      }
       var fenStr = NUM[note.fen] || String(note.fen);
       return text(x, yTop + h * 0.28, huiStr.length > 1 ? 15 : 20, huiStr) +
              text(x, yTop + h * 0.72, 20, fenStr);

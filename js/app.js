@@ -952,7 +952,10 @@
     w.document.write('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">' +
       '<title>琴谱通 · 打印</title><link rel="stylesheet" href="' + href + '">' +
       '<style>body{background:#fff;max-width:none;padding:20px}.jz-cell{cursor:default}</style>' +
-      '</head><body>' + el.innerHTML +
+      '</head><body>' + (function () {
+        var t = $(which === 'A' ? 'titleA' : 'titleB');
+        return (t && t.value.trim()) ? '<h2 style="text-align:center;font-family:Songti SC,serif;margin:4px 0 14px">' + t.value.trim().replace(/</g, '&lt;') + '</h2>' : '';
+      })() + el.innerHTML +
       '<p style="text-align:center;color:#a89877;font-size:12px">琴谱通 iamamilycc.github.io/qinpu</p>' +
       '</body></html>');
     w.document.close();
@@ -1355,6 +1358,7 @@
 
   // 示例：高山（徐元白打谱·春草堂琴谱1744）第 1/7 页——转录待与原谱核校
   window.loadDemo3 = function () {
+    if ($('titleB')) $('titleB').value = '高山 · 据《春草堂琴谱》(1744) 徐元白打谱（第1页·转录待校）';
     $('inJianpu').value = '2/4 T=30 5, 5, | 5, - | 5,. 1_ 6,_ | {5,}5,_ 6,_ 1 | 1. 5_ 3_ | 2 3_3_ / 5, 5, | 3. 2=1= | 6,_1_ 2_1_ | 1 1 - | 5 5,. 1_6,_ | 5, 5 - / T=54 5 5 - | 6=5=3=2=1=6= 5 | 5 - | 5 - 6_1_ | 5 5 - / (555) 5_5_ | 5_6_ 1_2_ | 1_6_ 1 | 1 - | 2 - | 3. 5_ / 5 6_5_ | 3 - | 2_3_ 2_1_ | 6,_ 6_5_ | 6 6_1_ | 2 3_5_ | 3. 5_ 3_2_ / 1_2_ 1 | 1 - | 3 3_5_ | 6_1_ 6 | 6 - | 5 - 5_6_ | 1 - ||';
     convertJianpu();
   };
