@@ -177,10 +177,10 @@
       parts.push(text(50, 96, 17, strGlyph));
     } else if (R === '撮' || R === '反撮' || R === '掐撮三声') {
       // 框架律：撮＝「早」减写为框架（GlyphWiki 专业字形），大T两臂记双音（左低右高）
-      var topCh2 = R === '反撮' ? gw('反', 50, 22, 17) : R === '掐撮三声' ? text(50, 22, 15, '爫') : null;
+      var topCh2 = R === '反撮' ? gw('反', 50, 21, 20) : R === '掐撮三声' ? text(50, 21, 17, '爫') : null;
       var yy = topCh2 ? 8 : 0;
       if (topCh2) parts.push(topCh2);
-      var GZao = gw('早', 50, 44 + yy, topCh2 ? 46 : 56);
+      var GZao = gw('早', 50, 44 + yy, topCh2 ? 52 : 62);
       if (GZao) parts.push(GZao);
       else {
         parts.push(text(50, 30 + yy, topCh2 ? 16 : 20, '日'));
@@ -192,10 +192,10 @@
         parts.push(text(68, 77 + yy, 14, '三'));
       } else {
         var cuo = note.cuo || { lt: '勾', ls: 0, rt: '挑', rs: note.string };
-        parts.push(text(30, 76 + yy, 18, cuo.lt === '勾' ? '勹' : '乚'));
-        if (cuo.ls) parts.push(text(29, 91 + yy, 13, NUM[cuo.ls]));
-        parts.push(text(70, 76 + yy, 18, cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚'));
-        parts.push(text(71, 91 + yy, 13, NUM[cuo.rs] || strGlyph));
+        parts.push(text(29, 76 + yy, 20, cuo.lt === '勾' ? '勹' : '乚'));
+        if (cuo.ls) parts.push(text(28, 92 + yy, 14, NUM[cuo.ls]));
+        parts.push(text(71, 76 + yy, 20, cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚'));
+        parts.push(text(72, 92 + yy, 14, NUM[cuo.rs] || strGlyph));
       }
     } else if (R === '打圆') {
       // 打圆＝囗内丁（GlyphWiki 部件，兜底字体拼装）
@@ -281,15 +281,15 @@
       if (GS) parts.push(GS);
       else {
         var st = STACK[R];
-        parts.push(text(50, 40, 22, st[0]));
-        parts.push(text(50, 63, 26, st[1]));
+        parts.push(text(50, 38, 26, st[0]));
+        parts.push(text(50, 64, 30, st[1]));
       }
       parts.push(text(50, 92, 18, strGlyph));
     } else {
       // 一劳永逸总开关：GlyphWiki 库里有的一律优先；否则弦号贴写在指法正下方
       var GAny = gw(R, 50, 52, 62);
       if (GAny) parts.push(GAny);
-      else parts.push(text(50, 55, rGlyph.length > 1 ? 30 : 50, rGlyph));
+      else parts.push(text(50, 54, rGlyph.length > 1 ? 34 : 58, rGlyph));
       parts.push(text(50, GAny ? 92 : 88, strGlyph.length > 1 ? 18 : GAny ? 19 : 25, strGlyph));
     }
 
