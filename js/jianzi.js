@@ -156,11 +156,11 @@
     } else if (R === '挑') {
       // 容器律：弦号写在乚内（弦号靠右避开竖画）
       parts.push(text(48, 56, 62, '乚'));
-      parts.push(text(54, 52, 22, strGlyph));
+      parts.push(text(54, 47, 22, strGlyph));
     } else if (R === '托') {
       // 容器律：弦号写在乇的乚内
       parts.push(text(48, 54, 60, '乇'));
-      parts.push(text(56, 68, 18, strGlyph));
+      parts.push(text(56, 62, 18, strGlyph));
     } else if (R === '剔') {
       // 剔（GlyphWiki 字形优先，弦号置于开口内；兜底：勹＋小冂拼装）
       var GTi = gw('剔', 51, 55, 62);
