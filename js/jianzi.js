@@ -30,7 +30,7 @@
     '短锁': '短锁', '长锁': '长巛', '背锁': '背锁', '如一声': '如一',
     '双弹': '双弹', '蠲': '蠲', '历': '厂', // 背锁⿱北巛/短锁⿱矢巛/双弹⿱双单=叠合；蠲=兴去中点,手绘
     '滚': '玄', '拂': '弗', '滚拂': '玄弗',
-    '泼': '癶', '剌': '剌', '泼剌': '泼剌', '伏': '伏', // 剌/泼剌手绘（束去撇捺），见 render
+    '泼': '癶', '拨': '癶', '剌': '剌', '泼剌': '泼剌', '伏': '伏', // 剌/泼剌手绘（束去撇捺），见 render
     '打圆': '打圆', '索铃': '索铃', '掐撮三声': '掐撮三声' // 三者均为手绘字，见 render
   };
   // 上下叠合的省文：反撮=反字头+早（谱字表）；背锁=北+巛、短锁=矢+巛（用户书证）；双弹=双+单（维基）
@@ -150,12 +150,12 @@
       parts.push(text(54, 52, 22, strGlyph));
     } else if (R === '托') {
       // 容器律：弦号写在乇的乚内
-      parts.push(text(48, 54, 56, '乇'));
+      parts.push(text(48, 54, 60, '乇'));
       parts.push(text(56, 68, 18, strGlyph));
     } else if (R === '剔') {
       // 剔（GlyphWiki 字形优先，弦号置于开口内；兜底：勹＋小冂拼装）
-      var GTi = gw('剔', 52, 52, 56);
-      if (GTi) { parts.push(GTi); parts.push(text(38, 72, 18, strGlyph)); }
+      var GTi = gw('剔', 52, 54, 64);
+      if (GTi) { parts.push(GTi); parts.push(text(38, 74, 18, strGlyph)); }
       else {
         parts.push(text(54, 60, 56, '勹'));
         parts.push(text(28, 35, 14, '冂'));
@@ -163,8 +163,8 @@
       }
     } else if (R === '摘') {
       // 摘（GlyphWiki 字形优先，弦号置于框口内；兜底：亠＋丷＋冂拼装）
-      var GZh = gw('摘', 50, 52, 56);
-      if (GZh) { parts.push(GZh); parts.push(text(42, 70, 17, strGlyph)); }
+      var GZh = gw('摘', 50, 54, 64);
+      if (GZh) { parts.push(GZh); parts.push(text(42, 72, 17, strGlyph)); }
       else {
         parts.push(text(50, 33, 19, '亠'));
         parts.push(text(50, 43, 12, '丷'));
@@ -173,14 +173,14 @@
       }
     } else if (R === '掐撮三声' && gw('掐撮三声', 50, 50, 60)) {
       // GlyphWiki 整字（爫＋早＋三 合体）
-      parts.push(gw('掐撮三声', 50, 50, 60));
+      parts.push(gw('掐撮三声', 50, 50, 66));
       parts.push(text(50, 96, 17, strGlyph));
     } else if (R === '撮' || R === '反撮' || R === '掐撮三声') {
       // 框架律：撮＝「早」减写为框架（GlyphWiki 专业字形），大T两臂记双音（左低右高）
       var topCh2 = R === '反撮' ? gw('反', 50, 22, 17) : R === '掐撮三声' ? text(50, 22, 15, '爫') : null;
       var yy = topCh2 ? 8 : 0;
       if (topCh2) parts.push(topCh2);
-      var GZao = gw('早', 50, 42 + yy, topCh2 ? 40 : 48);
+      var GZao = gw('早', 50, 44 + yy, topCh2 ? 46 : 56);
       if (GZao) parts.push(GZao);
       else {
         parts.push(text(50, 30 + yy, topCh2 ? 16 : 20, '日'));
@@ -192,20 +192,20 @@
         parts.push(text(68, 77 + yy, 14, '三'));
       } else {
         var cuo = note.cuo || { lt: '勾', ls: 0, rt: '挑', rs: note.string };
-        parts.push(text(31, 74 + yy, 16, cuo.lt === '勾' ? '勹' : '乚'));
-        if (cuo.ls) parts.push(text(30, 88 + yy, 12, NUM[cuo.ls]));
-        parts.push(text(69, 74 + yy, 16, cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚'));
-        parts.push(text(70, 88 + yy, 12, NUM[cuo.rs] || strGlyph));
+        parts.push(text(30, 76 + yy, 18, cuo.lt === '勾' ? '勹' : '乚'));
+        if (cuo.ls) parts.push(text(29, 91 + yy, 13, NUM[cuo.ls]));
+        parts.push(text(70, 76 + yy, 18, cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚'));
+        parts.push(text(71, 91 + yy, 13, NUM[cuo.rs] || strGlyph));
       }
     } else if (R === '打圆') {
       // 打圆＝囗内丁（GlyphWiki 部件，兜底字体拼装）
-      var GDy = gw('打圆', 50, 52, 54);
+      var GDy = gw('打圆', 50, 52, 62);
       if (GDy) parts.push(GDy);
       else { parts.push(text(50, 53, 54, '囗')); parts.push(text(50, 52, 24, '丁')); }
       parts.push(text(50, 94, 19, strGlyph));
     } else if (R === '轮') {
       // 輪右半去冂内艹（GlyphWiki 部件，兜底：人＋一＋冂）
-      var GLun = gw('轮', 50, 52, 54);
+      var GLun = gw('轮', 50, 52, 62);
       if (GLun) parts.push(GLun);
       else {
         parts.push(text(50, 34, 24, '人'));
@@ -215,13 +215,13 @@
       parts.push(text(50, 92, 19, strGlyph));
     } else if (R === '半轮') {
       // 半轮（GlyphWiki 字形优先；兜底：龹＋冂拼装）
-      var GBl = gw('半轮', 50, 50, 54);
+      var GBl = gw('半轮', 50, 52, 62);
       if (GBl) parts.push(GBl);
       else { parts.push(text(50, 42, 38, '龹')); parts.push(text(50, 69, 24, '冂')); }
       parts.push(text(50, 94, 17, strGlyph));
     } else if (R === '索铃') {
       // 索铃（GlyphWiki xicheng 字形；兜底：十＋冖＋令拼装）
-      var GSl = gw('索铃', 50, 50, 54);
+      var GSl = gw('索铃', 50, 52, 62);
       if (GSl) parts.push(GSl);
       else {
         parts.push(text(50, 29, 16, '十'));
@@ -231,13 +231,13 @@
       parts.push(text(50, 92, 18, strGlyph));
     } else if (R === '如一声') {
       // 女下紧加一（GlyphWiki 部件，兜底字体拼装）
-      var GR = gw('如一声', 50, 50, 50);
+      var GR = gw('如一声', 50, 52, 62);
       if (GR) parts.push(GR);
       else { parts.push(text(50, 42, 30, '女')); parts.push(text(50, 59, 26, '一')); }
       parts.push(text(50, 88, 19, strGlyph));
     } else if (R === '长锁') {
       // 长锁（GlyphWiki xicheng 字形＝镸＋巛；兜底：長上半裁剪＋巛）
-      var GCs = gw('长锁', 50, 50, 54);
+      var GCs = gw('长锁', 50, 52, 62);
       if (GCs) parts.push(GCs);
       else {
         parts.push(clipChar('長', 50, 44, 40, rectPts(28, 24, 72, 44)));
@@ -247,7 +247,7 @@
     } else if (R === '滚' || R === '滚拂') {
       // 衮的上半部分（＋弗）——GlyphWiki 整字部件，兜底真字裁剪
       var gf = R === '滚拂';
-      var GG = gw(gf ? '滚拂' : '滚', 50, 52, gf ? 58 : 52);
+      var GG = gw(gf ? '滚拂' : '滚', 50, 52, gf ? 64 : 62);
       if (GG) parts.push(GG);
       else {
         parts.push(clipChar('衮', 50, gf ? 40 : 52, gf ? 40 : 52, rectPts(22, gf ? 20 : 26, 78, gf ? 42 : 55)));
@@ -257,7 +257,7 @@
     } else if (R === '剌' || R === '泼剌') {
       // 束去掉下面一撇一捺（GlyphWiki 部件，兜底真字裁剪）
       var po = R === '泼剌';
-      var GL = gw(po ? '泼剌' : '剌', 50, 52, po ? 58 : 54);
+      var GL = gw(po ? '泼剌' : '剌', 50, 52, po ? 64 : 62);
       if (GL) parts.push(GL);
       else {
         if (po) parts.push(text(50, 32, 22, '癶'));
@@ -271,13 +271,13 @@
       parts.push(text(50, po ? 98 : 92, po ? 15 : 19, strGlyph));
     } else if (R === '蠲') {
       // 兴去掉上面中间一点（GlyphWiki 部件，兜底真字裁剪）
-      var GJ = gw('蠲', 50, 52, 52);
+      var GJ = gw('蠲', 50, 52, 62);
       if (GJ) parts.push(GJ);
       else parts.push(clipChar('兴', 50, 52, 50, '25,27 44,27 44,43 56,43 56,27 75,27 75,80 25,80'));
       parts.push(text(50, 92, 18, strGlyph));
     } else if (STACK[R]) {
       // 叠合律：两部件上下相叠（背锁/短锁/双弹优先 GlyphWiki 整字）
-      var GS = gw(R, 50, 50, 54);
+      var GS = gw(R, 50, 52, 62);
       if (GS) parts.push(GS);
       else {
         var st = STACK[R];
@@ -287,9 +287,9 @@
       parts.push(text(50, 92, 18, strGlyph));
     } else {
       // 一劳永逸总开关：GlyphWiki 库里有的一律优先；否则弦号贴写在指法正下方
-      var GAny = gw(R, 50, 52, 54);
+      var GAny = gw(R, 50, 52, 62);
       if (GAny) parts.push(GAny);
-      else parts.push(text(50, 55, rGlyph.length > 1 ? 28 : 44, rGlyph));
+      else parts.push(text(50, 55, rGlyph.length > 1 ? 30 : 50, rGlyph));
       parts.push(text(50, GAny ? 92 : 88, strGlyph.length > 1 ? 18 : GAny ? 19 : 25, strGlyph));
     }
 
