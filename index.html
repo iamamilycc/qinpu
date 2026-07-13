@@ -44,6 +44,9 @@
     <textarea id="jzTextIn" rows="2" placeholder="例：散勾一 勾二 挑三 | 名九挑四 上七六 大七六托五 泛七挑一"></textarea>
     <div class="btn-row" style="margin-top:6px">
       <button class="primary" onclick="parseJzText()">📜 解析生成简谱</button>
+      <button onclick="saveToLib('j2p')">💾 存入曲库</button>
+      <button onclick="openLib()">📂 我的曲库</button>
+      <button onclick="shareLink('j2p')">🔗 分享链接</button>
     </div>
     <p id="jzTextMsg" class="note"></p>
     <p class="note">写法：<b>名九挑四</b>=名指九徽挑四弦　<b>大七六托五</b>=大指七徽六分托五弦　<b>散勾一</b>=空弦勾一弦　<b>泛七挑一</b>=七徽泛音　<b>上九/下七六</b>=走音　裸弦号（二 三）=沿用上一指法　尾缀<b>绰注吟猱</b>=走音装饰　<b>|</b>=小节线。不会写？用下面的点选拼字↓</p>
@@ -166,6 +169,7 @@
       <button onclick="playA()">▶ 试听整段</button>
       <button onclick="stopPlay()">⏹ 停止</button>
       <button onclick="printScore('A')">🖨 打印 / 存PDF</button>
+      <span style="align-self:center;font-size:.85rem;color:#6d5f47">🐢 <input type="range" class="spd-range" min="50" max="150" value="100" step="5" style="vertical-align:middle;width:110px" oninput="setSpeed(this.value)"> <span class="spd-label">原速</span></span>
     </div>
     <div class="btn-row" style="margin-bottom:8px">
       <span style="align-self:center;font-size:.88rem;color:#6d5f47">🎭 打谱风格：</span>
@@ -204,6 +208,9 @@
       <button onclick="pickScorePhoto()">📷 拍谱识谱（AI）</button>
       <button onclick="loadDemo()">示例：普庵咒</button>
       <button onclick="loadDemo2()">示例：关山月</button>
+      <button onclick="saveToLib('p2j')">💾 存入曲库</button>
+      <button onclick="openLib()">📂 我的曲库</button>
+      <button onclick="shareLink('p2j')">🔗 分享链接</button>
     </div>
     <input type="file" id="scorePhotoIn" accept="image/*" capture="environment" style="display:none" onchange="onScorePhoto(this)">
     <div id="apiKeyRow" style="display:none; margin-top:8px">
@@ -219,6 +226,7 @@
       <button onclick="playB()">▶ 试听（真琴采样）</button>
       <button onclick="stopPlay()">⏹ 停止</button>
       <button onclick="printScore('B')">🖨 打印 / 存PDF</button>
+      <span style="align-self:center;font-size:.85rem;color:#6d5f47">🐢 <input type="range" class="spd-range" min="50" max="150" value="100" step="5" style="vertical-align:middle;width:110px" oninput="setSpeed(this.value)"> <span class="spd-label">原速</span></span>
     </div>
     <div id="scoreB" class="score"></div>
     <p class="note">💡 换「编配画像」即生成另一版减字谱（宏=散音骨架铺开／圆=按音走韵连贯／远=泛音清冷），「韵味」控制吟猱绰注密度——一首简谱可出多版对比。自动编配仍只是参考弹法。同一个音古琴上常有多种弹法——<b>点击任一减字，全部弹法会弹出菜单供选择</b>（选中即试听该音）。</p>
@@ -290,6 +298,7 @@
       <li><b>指法编配</b>：简谱→减字谱按琴人惯例自动编配——散按结合就近取位、低弦勾高弦挑、重复音勾剔/抹挑交替、小节头低弦散音用托、句尾长音用撮、按音上行加绰下行加注、长音加吟、高音恰逢泛音位则取泛音。仍只是<b>一种</b>参考弹法，不是唯一答案，更不能替代老师；点击任一减字可弹出全部弹法菜单选择。</li>
       <li><b>徽分</b>：按十二平均律计算到「徽分」（相邻两徽十等分），实际演奏以耳定音。</li>
       <li><b>字形</b>：部分减字省文（挑、剔、摘、擘等）字形尚在校对中，暂以全字或近似部件显示。</li>
+      <li><b>练琴三件套</b>：🐢速度滑块（50%–150% 慢练/快检）；谱内任意位置写 <b>T=NN</b> 可中途变速（散起入调各一速）；<b>💾曲库</b>把谱存在本机浏览器、<b>🔗分享链接</b>把谱编进网址发给琴友（无需注册，打开即见谱可试听）。</li>
       <li><b>定弦</b>：琴书《古琴弦法表》十五调全部支持——正调、蕤宾（紧五·金羽）、黄钟（紧五慢一·无射）、离忧、凄凉（紧二五·楚商）、慢角、玉女、慢商（慢二·广陵散）、间弦、无媒（泉鸣）、慢宫、商调、侧商、碧玉（三四弦同音♯F）、清商（姑洗）。页顶下拉切换，全站（转换/五线谱调号/试听）联动，示例曲为正调。间弦调性书载「C或♭B」、无媒「C或G」，本站取前者记谱；1=G/D 各调的升号音以临时记号显示。</li>
       <li><b>五线谱行</b>：简化版（低音谱表、F大调）——音高、符桿、八分符杠、附点齐全；三连音、延音线、装饰音记号暂未绘制。</li>
       <li><b>拍谱识谱（AI）</b>：拍下含简谱行的琴谱照片，AI 自动转录成谱并生成试听。需你自己的 API Key——Anthropic（sk-ant-开头）或 OpenAI（sk-开头）均可，按前缀自动识别；Key 只保存在你设备的浏览器里，本站无后端不经手。⚠️ ChatGPT Plus / Claude Pro 的包月订阅不含 API，需在 console.anthropic.com 或 platform.openai.com 单独充值建 Key；每张照片约消耗几分钱额度；识谱结果务必逐小节校对。纯古籍减字谱（无简谱行）的识别尚在实验规划。</li>
@@ -303,6 +312,13 @@
 <footer>琴谱通 · 减字谱⇄简谱转换 · 音高可算，韵味在人</footer>
 
 <script src="js/pitch.js"></script>
+<div id="libModal" style="display:none;position:fixed;inset:0;background:rgba(30,25,15,.45);z-index:60" onclick="if(event.target===this)closeLib()">
+  <div style="max-width:520px;margin:9vh auto;background:var(--card,#fdfaf2);border-radius:12px;padding:18px 20px;max-height:74vh;overflow:auto">
+    <h3 style="margin:0 0 10px">📂 我的曲库<span style="float:right;cursor:pointer;font-size:1.1rem" onclick="closeLib()">✕</span></h3>
+    <p class="note">谱存在这台设备的浏览器里（不上传）。换设备请用「🔗 分享链接」互传。</p>
+    <div id="libList"></div>
+  </div>
+</div>
 <script src="js/glyphparts.js"></script>
 <script src="js/jianzi.js"></script>
 <script src="js/staff.js"></script>

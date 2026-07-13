@@ -906,7 +906,7 @@
     if (!st) return;
     var items = scoreA.filter(function (x) { return x.kind === 'note'; });
     if (!items.length) { alert('谱面还是空的：先粘贴文字减字谱解析，或点选录入。'); return; }
-    var spb = 60 / st.bpm;
+    var spb = 60 / st.bpm / (window._spdScale || 1);
     // 先按小节线切句
     var phrases = [], cur = [];
     scoreA.forEach(function (it) {
@@ -995,14 +995,14 @@
 
   function eventsFromB() {
     var ev = [], t = 0, lastSemi = null, atBarStart = true;
-    var spb = SPB; // 可被谱中 T=NN 改变
+    var spb = SPB / (window._spdScale || 1); // 可被谱中 T=NN 改变；再除以试听速度滑块倍率
     var pendTie = null; // 连音线：待与下一同音合并
     var phraseStart = 0; // 当前乐句(小节)在 ev 中的起点
     expandForPlay(tokensB).forEach(function (pair) {
       var tk = pair[0], ti = pair[1];
       var col = ti + 1; // 第0列是谱号
       if (tk.kind === 'br' || tk.kind === 'volta' || tk.kind === 'voltaEnd') return;
-      if (tk.kind === 'tempo') { spb = 60 / tk.bpm; return; }
+      if (tk.kind === 'tempo') { spb = 60 / tk.bpm / (window._spdScale || 1); return; }
       if (tk.kind === 'bar' || tk.kind === 'time') {
         atBarStart = true;
         if (ev.length > phraseStart) {
@@ -1266,6 +1266,90 @@
     }
   }
 
+  /* ══════════ 试听速度 / 本地曲库 / 分享链接 ══════════ */
+  window._spdScale = 1;
+  window.setSpeed = function (v) {
+    window._spdScale = v / 100;
+    document.querySelectorAll('.spd-range').forEach(function (el) { el.value = v; });
+    var lbl = v == 100 ? '原速' : '×' + (v / 100).toFixed(2).replace(/0$/, '');
+    document.querySelectorAll('.spd-label').forEach(function (el) { el.textContent = lbl; });
+  };
+
+  function libAll() { try { return JSON.parse(localStorage.getItem('qinpu_lib') || '[]'); } catch (e) { return []; } }
+  function libWrite(a) { try { localStorage.setItem('qinpu_lib', JSON.stringify(a)); } catch (e) { alert('保存失败：浏览器存储不可用'); } }
+  function srcBox(dir) { return $(dir === 'p2j' ? 'inJianpu' : 'jzTextIn'); }
+
+  window.saveToLib = function (dir) {
+    var text = srcBox(dir).value.trim();
+    if (!text) { alert('先输入谱再保存'); return; }
+    var name = prompt('给这份谱起个名字：', dir === 'p2j' ? '我的简谱' : '我的减字谱');
+    if (!name) return;
+    var a = libAll();
+    a.unshift({ name: name, dir: dir, text: text, tuning: $('selTuning').value, ts: Date.now() });
+    libWrite(a);
+    alert('已存入曲库（保存在本机浏览器）');
+  };
+
+  window.openLib = function () {
+    var a = libAll(), h = '';
+    if (!a.length) h = '<p class="note">曲库还是空的——在输入框写好谱后点「💾 存入曲库」。</p>';
+    a.forEach(function (it, i) {
+      var d = new Date(it.ts);
+      h += '<div class="lib-item" style="display:flex;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line,#d9cfba)">' +
+        '<div style="flex:1;min-width:0"><b>' + it.name.replace(/</g, '&lt;') + '</b>' +
+        '<div style="font-size:.78rem;color:#8a7c62">' + (it.dir === 'p2j' ? '简谱→减字' : '减字→简谱') + ' · ' +
+        (d.getMonth() + 1) + '月' + d.getDate() + '日 · ' + it.text.slice(0, 24).replace(/</g, '&lt;') + '…</div></div>' +
+        '<button onclick="loadFromLib(' + i + ')">载入</button>' +
+        '<button onclick="delFromLib(' + i + ')" style="color:#a83a2a">删除</button></div>';
+    });
+    $('libList').innerHTML = h;
+    $('libModal').style.display = 'block';
+  };
+  window.closeLib = function () { $('libModal').style.display = 'none'; };
+
+  window.loadFromLib = function (i) {
+    var it = libAll()[i];
+    if (!it) return;
+    if (it.tuning && $('selTuning').value !== it.tuning) {
+      $('selTuning').value = it.tuning;
+      $('selTuning').dispatchEvent(new Event('change'));
+    }
+    switchTab(it.dir);
+    srcBox(it.dir).value = it.text;
+    if (it.dir === 'p2j') convertJianpu(); else parseJzText();
+    closeLib();
+  };
+  window.delFromLib = function (i) {
+    var a = libAll();
+    if (!confirm('删除「' + (a[i] && a[i].name) + '」？')) return;
+    a.splice(i, 1); libWrite(a); openLib();
+  };
+
+  function b64e(str) { return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function b64d(str) { return decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/')))); }
+
+  window.shareLink = function (dir) {
+    var text = srcBox(dir).value.trim();
+    if (!text) { alert('先输入谱再分享'); return; }
+    var url = location.origin + location.pathname + '#s=' +
+      b64e(JSON.stringify({ d: dir, t: text, u: $('selTuning').value }));
+    function done() { alert('分享链接已复制——发给琴友，打开即见谱可试听'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { prompt('复制这个链接：', url); });
+    else prompt('复制这个链接：', url);
+  };
+
+  function loadFromHash() {
+    var m = location.hash.match(/^#s=([A-Za-z0-9_-]+)/);
+    if (!m) return;
+    try {
+      var it = JSON.parse(b64d(m[1]));
+      if (it.u) { $('selTuning').value = it.u; $('selTuning').dispatchEvent(new Event('change')); }
+      switchTab(it.d === 'p2j' ? 'p2j' : 'j2p');
+      srcBox(it.d).value = it.t;
+      if (it.d === 'p2j') convertJianpu(); else parseJzText();
+    } catch (e) { /* 链接损坏则忽略 */ }
+  }
+
   // 初始化
   document.addEventListener('DOMContentLoaded', function () {
     // 徽位下拉 1~13
@@ -1283,6 +1367,8 @@
       var el = $('orn' + o); if (el) el.addEventListener('change', updatePreview);
     });
     // 调弦法切换：音律/五线谱调号/两个方向的谱面全部联动
+    setTimeout(loadFromHash, 60); // 分享链接打开自动载入
+    window.addEventListener('hashchange', loadFromHash);
     $('selTuning').addEventListener('change', function () {
       P.setTuning(this.value);
       S.setKey(P.tuning().flats);
