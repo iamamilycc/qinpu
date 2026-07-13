@@ -272,9 +272,11 @@
       }
       parts.push(text(50, 92, 18, strGlyph));
     } else {
-      // 无围合空间：弦号贴写在指法正下方
-      parts.push(text(50, 55, rGlyph.length > 1 ? 28 : 44, rGlyph));
-      parts.push(text(50, 88, strGlyph.length > 1 ? 19 : 25, strGlyph));
+      // 一劳永逸总开关：GlyphWiki 库里有的一律优先；否则弦号贴写在指法正下方
+      var GAny = gw(R, 50, 52, 54);
+      if (GAny) parts.push(GAny);
+      else parts.push(text(50, 55, rGlyph.length > 1 ? 28 : 44, rGlyph));
+      parts.push(text(50, GAny ? 92 : 88, strGlyph.length > 1 ? 18 : GAny ? 19 : 25, strGlyph));
     }
 
     // ── 走音/装饰：右侧竖排小字（截取/叠合，全部真字体部件）──
@@ -354,7 +356,15 @@
     return s;
   }
 
-  var API = { render: render, label: label, NUM: NUM, RIGHT: RIGHT, LEFT: LEFT, ORN: ORN, UNSURE: UNSURE };
+  // 按名输出单个专业字形的独立 SVG（教程速查表用）；库缺时返回 null
+  function part(name, sizePx) {
+    sizePx = sizePx || 34;
+    var g = gw(name, 50, 50, 96);
+    if (!g) return null;
+    return '<svg class="jianzi" viewBox="0 0 100 100" width="' + sizePx + '" height="' + sizePx + '" role="img" aria-label="' + esc(name) + '">' + g + '</svg>';
+  }
+
+  var API = { render: render, label: label, part: part, NUM: NUM, RIGHT: RIGHT, LEFT: LEFT, ORN: ORN, UNSURE: UNSURE };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else global.QinJianzi = API;
 })(typeof window !== 'undefined' ? window : this);

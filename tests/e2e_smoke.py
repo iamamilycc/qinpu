@@ -71,7 +71,7 @@ with sync_playwright() as p:
     print("— 教程 —")
     pg.click("#tab-tut"); pg.wait_for_timeout(400)
     chk(pg.locator("#tutRight tr").count() == 9, "右手八法表")
-    chk(pg.locator("#tutCombo tr").count() == 22, "组合指法表")  # 20指法+表头+掐撮三声
+    chk(pg.locator("#tutCombo tr").count() == 26, "组合指法表")  # 24指法+表头+掐撮三声
     chk(pg.locator(".tut-motion").count() == 8, "动作示意图")
 
     chk(len(errs) == 0, "全程无JS错误" + ("" if not errs else "：" + "; ".join(errs[:2])))
