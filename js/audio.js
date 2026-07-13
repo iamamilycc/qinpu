@@ -330,9 +330,11 @@
       var slide = 0.22;   // 滑得从容些，耳朵抓得住
       p.setValueAtTime(curRate, Math.max(when, wWhen - 0.02));
       p.linearRampToValueAtTime(nr, wWhen + slide);
-      // 滑动补偿：走音发生时余音已衰减，指力压弦提振——增益抬回可闻水平，
-      // 滑动中保留轻微"虚"感，到位后清晰
-      var boosted = Math.min(chain.vol * 0.95, lvl * 1.55);
+      // 滑动补偿：底下采样在持续自然衰减（τ≈1.3s），按经过时间指数补偿，
+      // 越晚的滑音提振越多，使"采样×增益"保持可闻水平；滑动中留轻微"虚"感
+      var elapsed = wWhen - when;
+      var comp = Math.min(Math.exp(elapsed / 1.3), 3.6);
+      var boosted = Math.max(lvl, chain.vol * 0.82 * comp);
       g.gain.setValueAtTime(lvl * 0.9, Math.max(when, wWhen - 0.02));
       g.gain.linearRampToValueAtTime(boosted * 0.85, wWhen + slide * 0.5);
       g.gain.linearRampToValueAtTime(boosted, wWhen + slide);
