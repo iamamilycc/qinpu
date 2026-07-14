@@ -249,6 +249,7 @@
       <button onclick="stepPlay(-1)">◀ 上一音</button>
       <button onclick="stepPlay(1)">▶ 下一音</button>
       <button onclick="stepReset()">⏮ 重头</button>
+      <button id="undoBtn" onclick="undoFinger()" disabled title="撤销改指法（⌘Z）" style="margin-left:10px">↩ 撤销改指法</button>
     </div>
     <p id="stepInfo" class="note"></p>
     <div id="scoreB" class="score"></div>
@@ -258,7 +259,15 @@
 
 <!-- ══════════ 教程 ══════════ -->
 <main id="panel-tut" class="panel" style="display:none">
-  <section class="card">
+  <section class="card" style="padding:14px 18px">
+    <b style="font-family:Songti SC,serif">目录</b>
+    <div class="tut-toc" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:.9rem">
+      <a href="#tut1">① 减字怎么拼</a><a href="#tut2">② 三种音色</a><a href="#tut3">③ 右手八法</a>
+      <a href="#tut3b">④ 组合指法</a><a href="#tut4">⑤ 左手走音</a><a href="#tut4b">⑥ 谱字术语</a>
+      <a href="#tut5">⑦ 徽位徽分</a><a href="#tut6">⑧ 软件怎么用</a>
+    </div>
+  </section>
+  <section class="card" id="tut1">
     <h2>一、减字是怎么拼出来的</h2>
     <p>减字谱不记「什么音」，记「怎么弹」。每个减字由几个部件上下叠成：</p>
     <div class="tut-flex">
@@ -271,34 +280,34 @@
       </ul>
     </div>
   </section>
-  <section class="card">
+  <section class="card" id="tut2">
     <h2>二、三种音色</h2>
     <div id="tutTimbre" class="tut-grid"></div>
   </section>
-  <section class="card">
+  <section class="card" id="tut3">
     <h2>三、右手八法（弹弦的八种基本指法）</h2>
     <table class="tut-table" id="tutRight"></table>
     <p class="note">示意图为<b>琴面俯视</b>：上方是一弦（离身体远的粗弦），下方是七弦（靠近弹琴人）。口诀：<b>向内＝朝自己身体方向弹，向外＝离开身体方向弹</b>。大指托擘、食指抹挑、中指勾剔、名指打摘，两两成对。</p>
   </section>
-  <section class="card">
+  <section class="card" id="tut3b">
     <h2>三之二、右手组合指法</h2>
     <table class="tut-table" id="tutCombo"></table>
     <p class="note">组合指法在录入器「右手指法→组合指法」分组里可选。撮、滚、拂等涉及多弦，谱面照记，试听暂按所选单弦发声。</p>
   </section>
-  <section class="card">
+  <section class="card" id="tut4">
     <h2>四、左手按弦与走音</h2>
     <table class="tut-table" id="tutLeft"></table>
     <p class="note">走音是古琴的灵魂：先弹响，再靠左手在弦上滑动改变音高，「一弹多音」。减字谱把这些动作记在字旁小注里。</p>
   </section>
-  <section class="card">
+  <section class="card" id="tut4b">
     <h2>四之二、谱字术语（不是指法，是谱面指示）</h2>
     <table class="tut-table" id="tutTerms"></table>
   </section>
-  <section class="card">
+  <section class="card" id="tut5">
     <h2>五、徽位与徽分</h2>
     <p>琴面镶的十三个圆点叫「<b>徽</b>」，从琴头数起为一徽到十三徽，是按弦取音的坐标。<b>泛音</b>只能在徽的正上方弹出；<b>按音</b>可在任意位置，两徽之间十等分记作「徽分」——如「七六」＝七徽六分。徽位越靠近岳山（一徽方向），音越高。</p>
   </section>
-  <section class="card">
+  <section class="card" id="tut6">
     <h2>六、本软件怎么用</h2>
     <ol>
       <li><b>看懂一张减字谱</b>：进「减字谱 → 简谱」，照谱逐字点选（音色→弦→徽位→指法）→ 点「添加」，即出简谱音高＋试听。</li>

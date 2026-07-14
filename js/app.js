@@ -589,14 +589,42 @@
       var n = readNote();
       var sm = P.noteSemitone(n);
       if (sm === null || isNaN(sm)) { alert('此弦徽组合无法发音，请调整。'); return; }
-      it.custom = n; it.noWalk = true;
+      window.snapFinger(); it.custom = n; it.noWalk = true;
       closeCandMenu(); renderScoreB();
       window.QinAudio.playSeq([{ t: 0, semi: sm, col: null, orn: n.orn, right: n.right, ntype: n.type }], null);
     };
     var cc = $('custClear');
-    if (cc) cc.onclick = function (e) { e.stopPropagation(); it.custom = null; it.noWalk = false; closeCandMenu(); renderScoreB(); };
+    if (cc) cc.onclick = function (e) { e.stopPropagation(); window.snapFinger(); it.custom = null; it.noWalk = false; closeCandMenu(); renderScoreB(); };
     $('custCancel').onclick = function (e) { e.stopPropagation(); closeCandMenu(); };
   };
+
+  var _undoStack = [];
+  window.snapFinger = function () {
+    _undoStack.push(notesB.map(function (it) {
+      return { pick: it.pick, noWalk: it.noWalk, custom: it.custom ? JSON.parse(JSON.stringify(it.custom)) : null,
+               walk: it.walk ? JSON.parse(JSON.stringify(it.walk)) : null };
+    }));
+    if (_undoStack.length > 40) _undoStack.shift();
+    var ub = $('undoBtn'); if (ub) ub.disabled = false;
+  };
+  window.undoFinger = function () {
+    var snap = _undoStack.pop();
+    if (!snap) return;
+    snap.forEach(function (o, i) {
+      if (!notesB[i]) return;
+      notesB[i].pick = o.pick; notesB[i].noWalk = o.noWalk;
+      notesB[i].custom = o.custom; notesB[i].walk = o.walk;
+    });
+    renderScoreB();
+    var ub = $('undoBtn'); if (ub) ub.disabled = !_undoStack.length;
+  };
+  document.addEventListener('keydown', function (e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'z' && $('panel-p2j').style.display !== 'none') {
+      var tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+      e.preventDefault(); window.undoFinger();
+    }
+  });
 
   window.showCands = function (ref, ev) {
     ev.stopPropagation();
@@ -618,7 +646,7 @@
         '<span>' + J.label(wNote) + (it.walk ? '　✓ 当前' : '') + '</span>';
       wd.onclick = function (e) {
         e.stopPropagation();
-        it.noWalk = false; it.pick = 0;
+        window.snapFinger(); it.noWalk = false; it.pick = 0;
         closeCandMenu();
         renderScoreB();
       };
@@ -633,6 +661,7 @@
         '<span>' + J.label(note) + (isCur ? '　✓ 当前' : '') + '</span>';
       d.onclick = function (e) {
         e.stopPropagation();
+        window.snapFinger();
         it.pick = i;
         it.noWalk = true; // 明确选了拨弦弹法 → 不再自动走音
         it.custom = null; // 选回候选即清除自定义
@@ -819,18 +848,29 @@
         if (isWalk && lastNoteJp) {
           var r1 = lastNoteJp.getBoundingClientRect();
           var r2 = jp.getBoundingClientRect();
+          function arc(ax, ay, bx, by, withHead) {
+            var lift = Math.min(15, (bx - ax) * 0.3 + 6);
+            var pa = document.createElementNS(NS, 'path');
+            pa.setAttribute('d', 'M' + ax + ' ' + ay + ' Q' + ((ax + bx) / 2) + ' ' + (Math.min(ay, by) - lift) + ' ' + bx + ' ' + by);
+            pa.setAttribute('class', 'arc-path');
+            layer.appendChild(pa);
+            if (withHead) {
+              var hd = document.createElementNS(NS, 'path');
+              hd.setAttribute('d', 'M' + (bx - 5) + ' ' + (by - 4) + ' L' + (bx + 0.5) + ' ' + by + ' L' + (bx - 5.5) + ' ' + (by + 1.5) + ' Z');
+              hd.setAttribute('class', 'arc-head');
+              layer.appendChild(hd);
+            }
+          }
+          var y1 = r1.top - dRect.top, y2 = r2.top - dRect.top;
           var x1 = r1.left + r1.width / 2 - dRect.left;
           var x2 = r2.left + r2.width / 2 - dRect.left;
-          var y = Math.min(r1.top, r2.top) - dRect.top - 2;
-          var lift = Math.min(15, (x2 - x1) * 0.3 + 6);
-          var path = document.createElementNS(NS, 'path');
-          path.setAttribute('d', 'M' + x1 + ' ' + y + ' Q' + ((x1 + x2) / 2) + ' ' + (y - lift) + ' ' + x2 + ' ' + y);
-          path.setAttribute('class', 'arc-path');
-          layer.appendChild(path);
-          var head = document.createElementNS(NS, 'path');
-          head.setAttribute('d', 'M' + (x2 - 5) + ' ' + (y - 4) + ' L' + (x2 + 0.5) + ' ' + y + ' L' + (x2 - 5.5) + ' ' + (y + 1.5) + ' Z');
-          head.setAttribute('class', 'arc-head');
-          layer.appendChild(head);
+          if (Math.abs(y1 - y2) > 18) {
+            // 换行：前一音拖弧到本行右缘，走音在新行左缘引入（各带自然收尾）
+            arc(x1, y1 - 2, dRect.width - 3, y1 - 2, false);
+            arc(3, y2 - 2, x2, y2 - 2, true);
+          } else {
+            arc(x1, Math.min(y1, y2) - 2, x2, Math.min(y1, y2) - 2, true);
+          }
         }
         if (hasNote) lastNoteJp = jp;
       });
@@ -902,6 +942,7 @@
   }
 
   window.playStyle = function (id) {
+    requestWake();
     var st = DAPU_STYLES[id];
     if (!st) return;
     var items = scoreA.filter(function (x) { return x.kind === 'note'; });
@@ -1103,9 +1144,21 @@
     }
   }
 
-  window.playB = function () { window.QinAudio.playSeq(eventsFromB(), highlightB); };
-  window.playA = function () { window.QinAudio.playSeq(eventsFromA(), null); };
-  window.stopPlay = function () { window._looping = false; clearTimeout(window._loopTimer); window.QinAudio.stop(); highlightB(null); };
+  var _wakeLock = null, _wantWake = false;
+  function requestWake() {
+    _wantWake = true;
+    if (!('wakeLock' in navigator)) return;
+    navigator.wakeLock.request('screen').then(function (wl) { _wakeLock = wl; }, function () {});
+  }
+  function releaseWake() { _wantWake = false; if (_wakeLock) { try { _wakeLock.release(); } catch (e) {} _wakeLock = null; } }
+  document.addEventListener('visibilitychange', function () {
+    // 系统在切走时会释放 wakeLock，回到前台若仍在播放则重新申请
+    if (document.visibilityState === 'visible' && _wantWake && !_wakeLock) requestWake();
+  });
+
+  window.playB = function () { requestWake(); window.QinAudio.playSeq(eventsFromB(), highlightB); };
+  window.playA = function () { requestWake(); window.QinAudio.playSeq(eventsFromA(), null); };
+  window.stopPlay = function () { window._looping = false; clearTimeout(window._loopTimer); releaseWake(); window.QinAudio.stop(); highlightB(null); };
   window.playCurrent = function () {
     var note = currentNoteFromForm();
     var s = P.noteSemitone(note);
@@ -1277,6 +1330,7 @@
 
   /* ══════════ AB 小节循环 / 逐音跟弹 / 竖排减字 ══════════ */
   window.playLoop = function () {
+    requestWake();
     var a = parseInt($('loopA').value, 10) || 1, b = parseInt($('loopB').value, 10) || a;
     if (b < a) { var tmp = a; a = b; b = tmp; }
     var evs = eventsFromB().filter(function (e) { return e.bar >= a && e.bar <= b; });

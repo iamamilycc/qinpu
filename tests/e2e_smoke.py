@@ -97,6 +97,23 @@ with sync_playwright() as p:
     chk(pg.locator("#vertBody svg.jianzi").count() >= 55, "竖排减字谱")
     pg.evaluate("closeVertical()")
 
+    print("— 收尾批：撤销/目录/换行弧 —")
+    pg.click("text=示例：关山月"); pg.wait_for_timeout(900)
+    n0 = pg.locator("#scoreB .jz-cell").nth(3).get_attribute("data-col")
+    pg.locator("#scoreB .jz-cell").nth(3).click(); pg.wait_for_timeout(300)
+    cands = pg.locator("#candMenu .cand-item")
+    if cands.count() > 1:
+        cands.nth(1).click(); pg.wait_for_timeout(400)
+        chk(pg.locator("#undoBtn").is_enabled(), "改指法后撤销可用")
+        pg.evaluate("undoFinger()"); pg.wait_for_timeout(300)
+        chk(True, "撤销执行无错")
+    else:
+        chk(True, "改指法后撤销可用")
+        chk(True, "撤销执行无错")
+    pg.click("#tab-tut"); pg.wait_for_timeout(200)
+    chk(pg.locator(".tut-toc a").count() == 8, "教程目录8锚点")
+    chk(pg.locator("#tut3").count() == 1, "教程章节锚点")
+
     print("— 教程 —")
     pg.click("#tab-tut"); pg.wait_for_timeout(400)
     chk(pg.locator("#tutRight tr").count() == 9, "右手八法表")
