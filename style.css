@@ -67,6 +67,16 @@ button { font-family: inherit; }
 .btn-row .primary, .tool-group .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn-row .primary:hover, .tool-group .primary:hover { background: var(--accent-dark); }
 
+/* 点击反馈：按下时下沉，松开有一次高亮闪动，明确「已点到」 */
+button { transition: transform .06s ease, background-color .15s ease, box-shadow .15s ease; }
+button:not(:disabled):active { transform: translateY(1px) scale(.97); }
+button.btn-flash { animation: btnFlash .32s ease; }
+@keyframes btnFlash {
+  0%   { background: var(--accent); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@media (prefers-reduced-motion: reduce) { button.btn-flash { animation: none; } button:active { transform: none; } }
+
 /* 功能分区工具组：一行一类，带类别标签 */
 .tool-group {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;

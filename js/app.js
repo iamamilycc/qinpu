@@ -1395,8 +1395,15 @@
   var _stepIdx = -1;
   window.stepReset = function () {
     var evs = eventsFromB();
-    _stepIdx = -1; highlightB(null);
-    $('stepInfo').textContent = evs.length ? '⏮ 已回到开头——点「▶ 下一音」从第 1 音开始跟弹' : '先转换出谱再跟弹';
+    if (!evs.length) { $('stepInfo').textContent = '先转换出谱再跟弹'; return; }
+    // 真正跳到第一个音：高亮 + 滚动 + 显示信息（点「下一音」接着往后）
+    _stepIdx = 0;
+    var e = Object.assign({}, evs[0]); e.t = 0; e.glideFrom = null;
+    window.QinAudio.playSeq([e], null);
+    highlightB(e.col);
+    var cell = document.querySelector('#scoreB [data-col="' + e.col + '"] svg.jianzi');
+    $('stepInfo').textContent = '⏮ 已回到第 1 音' + (cell ? '：' + (cell.getAttribute('aria-label') || '') : '') + '（点「▶ 下一音」继续）';
+    if (cell) cell.scrollIntoView({ block: 'center', behavior: 'smooth' });
   };
   window.stepPlay = function (d) {
     var evs = eventsFromB();
@@ -1568,6 +1575,14 @@
     // 调弦法切换：音律/五线谱调号/两个方向的谱面全部联动
     setTimeout(loadFromHash, 60); // 分享链接打开自动载入
     window.addEventListener('hashchange', loadFromHash);
+    // 全站按钮点击反馈：任何 <button> 被点都闪一下，让用户确认「按到了」
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('button');
+      if (!btn || btn.disabled) return;
+      btn.classList.remove('btn-flash'); void btn.offsetWidth; // 重触发动画
+      btn.classList.add('btn-flash');
+      setTimeout(function () { btn.classList.remove('btn-flash'); }, 340);
+    }, true);
     $('selTuning').addEventListener('change', function () {
       P.setTuning(this.value);
       S.setKey(P.tuning().flats);

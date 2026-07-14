@@ -93,10 +93,11 @@ with sync_playwright() as p:
     chk("第 2/" in pg.inner_text("#stepInfo"), "▶下一音累进")
     pg.click("text=◀ 上一音"); pg.wait_for_timeout(200)
     chk("第 1/" in pg.inner_text("#stepInfo"), "◀上一音")
-    pg.click("text=⏮ 重头"); pg.wait_for_timeout(200)
-    chk("回到开头" in pg.inner_text("#stepInfo"), "⏮重头有反应")
+    pg.click("text=⏮ 重头"); pg.wait_for_timeout(300)
+    chk("回到第 1 音" in pg.inner_text("#stepInfo"), "⏮重头跳到第1音有反应")
+    chk(pg.locator("#scoreB .dp-col.playing").count() >= 1, "重头后第1音高亮")
     pg.click("text=▶ 下一音"); pg.wait_for_timeout(200)
-    chk("第 1/" in pg.inner_text("#stepInfo"), "重头后从第1音起")
+    chk("第 2/" in pg.inner_text("#stepInfo"), "重头后下一音接第2音")
 
     # 编辑·输出（复位默认编配，重转换，再点减字改真弹法）
     print("— 编辑/输出/竖排 —")
