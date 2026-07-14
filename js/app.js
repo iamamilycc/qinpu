@@ -1328,6 +1328,24 @@
     }
   }
 
+  /* ══════════ MIDI 导入（纯前端）══════════ */
+  window.onMidiFile = function (input) {
+    var f = input.files && input.files[0];
+    input.value = '';
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var jp = window.QinMidi.parse(rd.result);
+        if (!jp) { $('humMsg').textContent = 'MIDI 里没读到音符（可能是空轨或纯打击乐）。'; return; }
+        $('inJianpu').value = jp;
+        $('humMsg').textContent = '✓ 已从 MIDI 导入旋律（取单声部，按当前调弦映射；和弦已取最高音）。';
+        convertJianpu();
+      } catch (e) { $('humMsg').textContent = 'MIDI 解析失败：' + (e.message || e); }
+    };
+    rd.readAsArrayBuffer(f);
+  };
+
   /* ══════════ 哼唱转谱（纯前端，无需 API）══════════ */
   window.toggleHum = function () {
     var btn = $('humBtn'), msg = $('humMsg');

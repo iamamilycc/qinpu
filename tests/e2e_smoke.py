@@ -125,6 +125,18 @@ with sync_playwright() as p:
     chk(pg.evaluate("QinHum.quantize([{f:-1,rms:0.001},{f:-1,rms:0.001}],0.046)") == "", "全静音返回空")
     chk(pg.locator("#humBtn").count() == 1, "哼唱按钮存在")
 
+    print("— MIDI 导入引擎 —")
+    midi = pg.evaluate("""() => {
+      function vlq(n){var b=[n&0x7f];n>>=7;while(n){b.unshift((n&0x7f)|0x80);n>>=7;}return b;}
+      var ev=[]; [60,62,64,65].forEach(function(m){ ev=ev.concat(vlq(0),[0x90,m,0x64],vlq(480),[0x80,m,0x00]); });
+      var trk=ev.concat([0,0xff,0x2f,0]);
+      function u32(n){return[(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255];}
+      var hdr=[0x4d,0x54,0x68,0x64].concat(u32(6),[0,0,0,1,0x01,0xe0]);
+      var body=[0x4d,0x54,0x72,0x6b].concat(u32(trk.length),trk);
+      return QinMidi.parse(new Uint8Array(hdr.concat(body)).buffer);
+    }""")
+    chk(midi.startswith("5 6 7"), "MIDI do-re-mi-fa→5 6 7 1'")
+
     print("— 教程 —")
     pg.click("#tab-tut"); pg.wait_for_timeout(400)
     chk(pg.locator("#tutRight tr").count() == 9, "右手八法表")
