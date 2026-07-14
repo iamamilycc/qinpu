@@ -80,7 +80,8 @@ h2::before {
 }
 
 .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-.form-grid label { display: flex; flex-direction: column; font-size: .88rem; color: #6d5f47; gap: 3px; }
+.form-grid label { display: flex; flex-direction: column; font-size: .88rem; color: #6d5f47; gap: 3px; min-width: 0; }
+.form-grid select { max-width: 100%; }
 select, textarea {
   font-family: inherit; font-size: 1rem; padding: 7px 8px;
   border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink);
@@ -266,7 +267,7 @@ footer::before { content: "❖"; display: block; color: var(--seal); opacity: .5
 
 @media (max-width: 560px) {
   h1 { font-size: 1.6rem; }
-  .form-grid { grid-template-columns: repeat(3, 1fr); }
+  .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* ── 走音真弧线层 + 三连音 + 反复记号 ── */
