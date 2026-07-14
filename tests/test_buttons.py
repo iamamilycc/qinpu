@@ -161,6 +161,9 @@ with sync_playwright() as p:
     chk(pg.evaluate("__ocrProvider('abcd1234.efgh5678')") == "zhipu", "智谱 key（xxx.yyy）→ zhipu")
     chk(pg.evaluate("__ocrProvider('sk-ant-abc123')") == "anthropic", "sk-ant-→ anthropic")
     chk(pg.evaluate("__ocrProvider('sk-proj-abc')") == "openai", "sk-→ openai")
+    pg.select_option("#zhipuModel", "glm-4.6v"); pg.wait_for_timeout(150)
+    chk(pg.evaluate("localStorage.getItem('qinpu_zhipu_model')") == "glm-4.6v", "精度选择记住(存本机)")
+    chk(pg.locator("#panel-p2j button", has_text="📷 拍谱识谱").count() == 1, "拍谱识谱按钮在获取旋律组可见")
 
     # 教程目录锚点
     print("— 教程目录 —")

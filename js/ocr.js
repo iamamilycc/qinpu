@@ -152,4 +152,17 @@
       if (('' + e).indexOf('KEY') >= 0) { localStorage.removeItem('qinpu_api_key'); }
     });
   }
+
+  // 记住智谱识别精度选择（存本机，下次自动沿用，不必每次重选）
+  (function () {
+    var zm = $('zhipuModel');
+    if (!zm) return;
+    var saved = localStorage.getItem('qinpu_zhipu_model');
+    if (saved) {
+      var ok = false;
+      for (var i = 0; i < zm.options.length; i++) if (zm.options[i].value === saved) ok = true;
+      if (ok) zm.value = saved;
+    }
+    zm.addEventListener('change', function () { localStorage.setItem('qinpu_zhipu_model', zm.value); });
+  })();
 })();
