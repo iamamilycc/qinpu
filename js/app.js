@@ -1393,7 +1393,11 @@
   };
 
   var _stepIdx = -1;
-  window.stepReset = function () { _stepIdx = -1; $('stepInfo').textContent = ''; highlightB(null); };
+  window.stepReset = function () {
+    var evs = eventsFromB();
+    _stepIdx = -1; highlightB(null);
+    $('stepInfo').textContent = evs.length ? '⏮ 已回到开头——点「▶ 下一音」从第 1 音开始跟弹' : '先转换出谱再跟弹';
+  };
   window.stepPlay = function (d) {
     var evs = eventsFromB();
     if (!evs.length) { alert('先转换出谱再跟弹'); return; }
@@ -1421,7 +1425,7 @@
         if (it.fanMark) note.fanMark = it.fanMark;
         if (it.cuo) note.cuo = it.cuo;
       }
-      cells.push(J.render(note, sizePx || 52, {}));
+      cells.push(J.render(note, sizePx || 52, { bare: true }));
     });
     if (!cells.length) return '';
     var per = 8, cols = [];
