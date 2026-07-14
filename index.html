@@ -9,8 +9,15 @@
 </head>
 <body>
 <header>
-  <h1>琴谱通</h1>
-  <p class="sub">古琴减字谱 ⇄ 简谱 · 双向转换
+  <div class="masthead">
+    <span class="seal" aria-hidden="true"><span>琴</span></span>
+    <div class="mast-txt">
+      <h1>琴谱通</h1>
+      <p class="sub">古琴减字谱 ⇄ 简谱 · 双向转换</p>
+    </div>
+  </div>
+  <div class="tuning-bar">
+    <label for="selTuning">定弦</label>
     <select id="selTuning" class="tuning-sel" title="调弦法">
       <optgroup label="常用">
         <option value="zheng" selected>正调 1=F</option>
@@ -31,13 +38,14 @@
         <option value="biyu">碧玉调·紧三慢一四六 1=D</option>
         <option value="qingshang">清商调·紧二五七 1=♭E</option>
       </optgroup>
-    </select></p>
+    </select>
+  </div>
 </header>
 
 <nav class="tabs">
   <button id="tab-j2p" class="active" onclick="switchTab('j2p')">减字谱 → 简谱</button>
   <button id="tab-p2j" onclick="switchTab('p2j')">简谱 → 减字谱</button>
-  <button id="tab-tut" onclick="switchTab('tut')">📖 教程</button>
+  <button id="tab-tut" onclick="switchTab('tut')">教程</button>
   <button id="tab-about" onclick="switchTab('about')">说明</button>
 </nav>
 

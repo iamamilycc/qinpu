@@ -1,41 +1,83 @@
 /* 琴谱通 —— 素纸墨色，向古谱致意 */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --ink: #2b2620;
-  --paper: #f7f2e7;
-  --card: #fffdf6;
-  --line: #d8cdb4;
-  --accent: #8a5a2b;
-  --accent-dark: #6d4620;
+  --ink: #26221c;          /* 近墨黑，标题用 */
+  --ink-soft: #6b5f4c;     /* 次级文字 */
+  --paper: #f4efe2;        /* 素纸暖白 */
+  --paper-deep: #ece4d2;   /* 纸面凹陷 */
+  --card: #fdfaf1;
+  --line: #ddd2ba;
+  --hair: #e6dcc6;         /* 更细的分隔线 */
+  --accent: #7c5327;       /* 赭石（次强调，收敛使用）*/
+  --accent-dark: #5e3f1d;
+  --seal: #b0362a;         /* 朱砂（唯一强调色，印章/眉标）*/
+  --seal-deep: #8f2a20;
   --red: #a33c2f;
 }
 body {
-  font-family: "Songti SC", "Noto Serif SC", "STSong", serif;
-  background: var(--paper);
+  font-family: "Songti SC", "Source Han Serif SC", "Noto Serif SC", "STSong", serif;
+  background:
+    radial-gradient(1200px 400px at 50% -160px, #fbf7ec 0%, transparent 70%),
+    var(--paper);
   color: var(--ink);
-  max-width: 860px;
+  max-width: 880px;
   margin: 0 auto;
-  padding: 16px 14px 40px;
+  padding: 22px 16px 48px;
   line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
 }
-header { text-align: center; padding: 14px 0 4px; }
-h1 { font-size: 2rem; letter-spacing: .35em; text-indent: .35em; }
-.sub { color: #7a6c53; margin-top: 2px; }
+
+/* ── 品牌题头：朱砂印 + 刊名 ── */
+header { padding: 6px 0 4px; }
+.masthead { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.seal {
+  flex: none; width: 54px; height: 54px; border-radius: 9px;
+  background: linear-gradient(150deg, var(--seal) 0%, var(--seal-deep) 100%);
+  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.22), 0 3px 10px rgba(140,40,30,.28);
+  display: grid; place-items: center;
+}
+.seal > span {
+  color: #f7ede0; font-size: 1.75rem; font-weight: 700; line-height: 1;
+  font-family: "Songti SC", "Source Han Serif SC", serif;
+  text-shadow: 0 1px 1px rgba(0,0,0,.2);
+}
+.mast-txt { text-align: left; }
+h1 { font-size: 2rem; letter-spacing: .28em; text-indent: .28em; color: var(--ink); font-weight: 700; }
+.sub { color: var(--ink-soft); margin-top: 3px; font-size: .96rem; letter-spacing: .04em; }
 .tag { font-size: .78em; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--accent); }
 
-.tabs { display: flex; gap: 6px; margin: 16px 0 12px; }
-.tabs button {
-  flex: 1; padding: 10px 4px; font-size: 1rem; font-family: inherit;
-  background: transparent; border: 1px solid var(--line); border-radius: 8px 8px 0 0;
-  color: #7a6c53; cursor: pointer;
+/* 定弦条：题头下方，右对齐的小控件，含细分隔线 */
+.tuning-bar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hair);
+  font-size: .82rem; color: var(--ink-soft);
 }
-.tabs button.active { background: var(--card); color: var(--accent-dark); border-bottom-color: var(--card); font-weight: 700; }
+.tuning-bar label { letter-spacing: .1em; }
+
+.tabs { display: flex; gap: 4px; margin: 16px 0 14px; border-bottom: 1.5px solid var(--line); }
+.tabs button {
+  flex: 1; padding: 11px 4px; font-size: 1.02rem; font-family: inherit;
+  background: transparent; border: none; border-bottom: 2.5px solid transparent;
+  color: var(--ink-soft); cursor: pointer; letter-spacing: .08em;
+  transition: color .15s ease, border-color .15s ease;
+}
+.tabs button:hover { color: var(--ink); }
+.tabs button.active { color: var(--seal); border-bottom-color: var(--seal); font-weight: 700; }
 
 .card {
-  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-  padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(80,60,30,.06);
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px 20px; margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(80,60,30,.04), 0 8px 24px -16px rgba(80,60,30,.22);
 }
-h2 { font-size: 1.05rem; color: var(--accent-dark); margin-bottom: 10px; }
+/* 段标题：朱砂细眉标 + 墨字 */
+h2 {
+  font-size: 1.08rem; color: var(--ink); margin-bottom: 12px; font-weight: 700;
+  letter-spacing: .02em; padding-left: 11px; position: relative;
+}
+h2::before {
+  content: ""; position: absolute; left: 0; top: .18em; bottom: .18em;
+  width: 3px; border-radius: 2px; background: var(--seal);
+}
 
 .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
 .form-grid label { display: flex; flex-direction: column; font-size: .88rem; color: #6d5f47; gap: 3px; }
@@ -64,8 +106,13 @@ button { font-family: inherit; }
   padding: 9px 16px; font-size: .95rem; border-radius: 8px; cursor: pointer;
   border: 1px solid var(--line); background: #fff; color: var(--ink);
 }
-.btn-row .primary, .tool-group .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-row .primary:hover, .tool-group .primary:hover { background: var(--accent-dark); }
+.btn-row button:hover, .tool-group button:hover { border-color: var(--accent); color: var(--accent-dark); }
+.btn-row .primary, .tool-group .primary {
+  background: linear-gradient(180deg, #855a2c 0%, var(--accent-dark) 100%);
+  border-color: var(--accent-dark); color: #fbf3e6; font-weight: 600;
+  box-shadow: 0 2px 6px -2px rgba(94,63,29,.5);
+}
+.btn-row .primary:hover, .tool-group .primary:hover { filter: brightness(1.06); color: #fff; }
 
 /* 点击反馈：按下时下沉，松开有一次高亮闪动，明确「已点到」 */
 button { transition: transform .06s ease, background-color .15s ease, box-shadow .15s ease; }
@@ -85,9 +132,9 @@ button.btn-flash { animation: btnFlash .32s ease; }
   background: color-mix(in srgb, var(--accent) 4%, transparent);
 }
 .tool-group .tg-label {
-  font-size: .78rem; font-weight: 600; color: var(--accent-dark, #8a5a2a);
-  letter-spacing: .04em; white-space: nowrap;
-  padding-right: 8px; margin-right: 2px; border-right: 1px solid var(--line);
+  font-size: .76rem; font-weight: 700; color: var(--seal);
+  letter-spacing: .08em; white-space: nowrap;
+  padding-right: 9px; margin-right: 2px; border-right: 1px solid var(--line);
 }
 .tool-group select { padding: 8px 10px; }
 .tool-group button { padding: 8px 13px; font-size: .92rem; }
@@ -207,11 +254,15 @@ button.btn-flash { animation: btnFlash .32s ease; }
   .score { border: none; background: #fff; }
 }
 
-.note { font-size: .85rem; color: #8a7a5e; margin-top: 8px; }
+.note { font-size: .85rem; color: var(--ink-soft); margin-top: 8px; }
 .warn { color: var(--red); font-size: .9rem; }
 ul, ol { padding-left: 1.5em; }
 li { margin-bottom: 6px; }
-footer { text-align: center; color: #a89877; font-size: .85rem; margin-top: 24px; letter-spacing: .1em; }
+footer {
+  text-align: center; color: #a4967b; font-size: .82rem; margin-top: 30px;
+  padding-top: 18px; border-top: 1px solid var(--hair); letter-spacing: .14em;
+}
+footer::before { content: "❖"; display: block; color: var(--seal); opacity: .5; margin-bottom: 8px; font-size: .9rem; }
 
 @media (max-width: 560px) {
   h1 { font-size: 1.6rem; }
@@ -231,7 +282,7 @@ footer { text-align: center; color: #a89877; font-size: .85rem; margin-top: 24px
 .abbr-num { font-size: 1.45rem; font-weight: 600; font-family: "Songti SC", serif; }
 
 /* 调弦法下拉 */
-.tuning-sel { font-family: inherit; font-size: .82rem; padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--accent-dark); margin-left: 6px; }
+.tuning-sel { font-family: inherit; font-size: .82rem; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--accent-dark); }
 /* 自定义弹法编辑器 */
 .cust-editor { min-width: 300px; max-width: 360px; }
 .cust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 6px; }
