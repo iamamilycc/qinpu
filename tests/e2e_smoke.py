@@ -44,7 +44,7 @@ with sync_playwright() as p:
     pg.click("#panel-p2j >> text=⏹ 停止")
 
     print("— 弹法菜单 + 自定义弹法 —")
-    pg.click("text=示例：普庵咒"); pg.wait_for_timeout(600)
+    pg.click("text=名曲：普庵咒"); pg.wait_for_timeout(600)
     pg.locator("#scoreB .jz-cell").nth(1).click(); pg.wait_for_timeout(300)
     chk(pg.locator("#candMenu").count() == 1, "弹法菜单弹出")
     chk(pg.locator("#candMenu .cand-add").count() == 1, "自定义入口")
@@ -61,7 +61,7 @@ with sync_playwright() as p:
     pg.select_option("#selTuning", "zheng"); pg.wait_for_timeout(300)
 
     print("— 关山月全曲回归 —")
-    pg.click("text=示例：关山月"); pg.wait_for_timeout(800)
+    pg.click("text=名曲：关山月"); pg.wait_for_timeout(800)
     chk(pg.locator("#scoreB .jz-cell").count() >= 100, "全曲≥100音")
     chk(pg.locator("#scoreB .st-clef").count() >= 6, "分行行首谱号")
     chk(pg.locator("#scoreB .arc-path").count() >= 5, "走音弧线")
@@ -82,7 +82,7 @@ with sync_playwright() as p:
     chk(pg.input_value("#inJianpu").startswith("2/4 5 6"), "分享链接自动载谱")
 
     print("— 循环/跟弹/竖排/高山 —")
-    pg.click("text=示例：高山·页1(待校)"); pg.wait_for_timeout(1000)
+    pg.click("text=名曲：高山·页1(待校)"); pg.wait_for_timeout(1000)
     chk(pg.locator("#scoreB .jz-cell").count() >= 55, "高山示例转换")
     chk("" == pg.inner_text("#convMsg").strip(), "高山谱文无解析报错")
     pg.evaluate("stepPlay(1)"); pg.wait_for_timeout(300)
@@ -98,7 +98,7 @@ with sync_playwright() as p:
     pg.evaluate("closeVertical()")
 
     print("— 收尾批：撤销/目录/换行弧 —")
-    pg.click("text=示例：关山月"); pg.wait_for_timeout(900)
+    pg.click("text=名曲：关山月"); pg.wait_for_timeout(900)
     n0 = pg.locator("#scoreB .jz-cell").nth(3).get_attribute("data-col")
     pg.locator("#scoreB .jz-cell").nth(3).click(); pg.wait_for_timeout(300)
     cands = pg.locator("#candMenu .cand-item")
