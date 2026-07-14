@@ -211,6 +211,7 @@
         <option value="0.3">韵味：淡</option>
         <option value="0.9">韵味：浓</option>
       </select>
+      <button id="humBtn" onclick="toggleHum()">🎤 哼唱转谱</button>
       <button onclick="loadDemo()">示例：普庵咒</button>
       <button onclick="loadDemo2()">示例：关山月</button>
       <button onclick="loadDemo3()">示例：高山·页1(待校)</button>
@@ -227,6 +228,7 @@
       <button onclick="saveApiKey()" style="padding:7px 12px">保存</button>
     </div>
     <p id="ocrMsg" class="note"></p>
+    <p id="humMsg" class="note"></p>
     <p id="convMsg" class="warn"></p>
   </section>
   <section class="card score-card">
@@ -360,6 +362,7 @@
     <div id="libList"></div>
   </div>
 </div>
+<script src="js/hum.js"></script>
 <script src="js/glyphparts.js"></script>
 <script src="js/jianzi.js"></script>
 <script src="js/staff.js"></script>

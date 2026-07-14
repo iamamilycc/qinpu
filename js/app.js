@@ -1328,6 +1328,30 @@
     }
   }
 
+  /* ══════════ 哼唱转谱（纯前端，无需 API）══════════ */
+  window.toggleHum = function () {
+    var btn = $('humBtn'), msg = $('humMsg');
+    if (!window.QinHum) { alert('哼唱模块未加载'); return; }
+    if (QinHum.isRecording()) {
+      var jp = QinHum.stop();
+      btn.textContent = '🎤 哼唱转谱'; btn.classList.remove('primary');
+      if (!jp) { msg.textContent = '没听清——请在安静环境，用「啦」清唱每个音，一个字一个字唱清楚再试。'; return; }
+      $('inJianpu').value = jp;
+      msg.textContent = '✓ 已转成简谱（音高按当前调弦映射，可手动改八度/节奏后再转换）。哼唱识别是参考，细节请核对。';
+      convertJianpu();
+      return;
+    }
+    QinHum.start(function (rms, f) {
+      msg.textContent = '🔴 录音中…… ' + (f > 0 ? Math.round(f) + ' Hz' : '（听）') +
+        '　' + '▮'.repeat(Math.min(20, Math.round(rms * 260)));
+    }).then(function () {
+      btn.textContent = '⏹ 停止并生成'; btn.classList.add('primary');
+      msg.textContent = '🔴 录音中……用「啦」清唱旋律，唱完点「停止并生成」。';
+    }).catch(function () {
+      msg.textContent = '无法使用麦克风——请在浏览器允许麦克风权限（需 HTTPS 或 localhost）。';
+    });
+  };
+
   /* ══════════ AB 小节循环 / 逐音跟弹 / 竖排减字 ══════════ */
   window.playLoop = function () {
     requestWake();

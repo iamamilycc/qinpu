@@ -114,6 +114,17 @@ with sync_playwright() as p:
     chk(pg.locator(".tut-toc a").count() == 8, "教程目录8锚点")
     chk(pg.locator("#tut3").count() == 1, "教程章节锚点")
 
+    print("— 哼唱转谱引擎 —")
+    hum = pg.evaluate("""() => {
+      function tone(hz,n){var a=[];for(var i=0;i<n;i++)a.push({f:hz,rms:0.05});return a;}
+      function sil(n){var a=[];for(var i=0;i<n;i++)a.push({f:-1,rms:0.001});return a;}
+      var seq=[].concat(tone(261.63,12),sil(3),tone(293.66,12),sil(3),tone(329.63,12),sil(3),tone(392.0,26));
+      return QinHum.quantize(seq,0.046);
+    }""")
+    chk(hum.startswith("5 6 7"), "哼唱转谱 do-re-mi-sol→5 6 7 2'")
+    chk(pg.evaluate("QinHum.quantize([{f:-1,rms:0.001},{f:-1,rms:0.001}],0.046)") == "", "全静音返回空")
+    chk(pg.locator("#humBtn").count() == 1, "哼唱按钮存在")
+
     print("— 教程 —")
     pg.click("#tab-tut"); pg.wait_for_timeout(400)
     chk(pg.locator("#tutRight tr").count() == 9, "右手八法表")
