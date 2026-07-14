@@ -27,7 +27,7 @@
   window.pickScorePhoto = function () {
     if (!getKey()) {
       $('apiKeyRow').style.display = '';
-      $('ocrMsg').textContent = '第一次使用：粘贴你的 Anthropic API Key（console.anthropic.com 可申请；只存本机）。';
+      $('ocrMsg').innerHTML = '第一次使用：粘贴 API Key（只存本机浏览器，不上传）。<b>推荐智谱——有免费视觉模型</b>：到 <a href="https://bigmodel.cn" target="_blank">bigmodel.cn</a> 注册→「API Keys」复制（形如 <code>xxxx.yyyy</code>），本站自动识别用免费的 GLM-4.6V-Flash。也支持 Anthropic（sk-ant-…）/ OpenAI（sk-…）付费 Key。';
       return;
     }
     $('scorePhotoIn').click();
@@ -71,12 +71,21 @@
     '|=小节线　左手指=大/食/中/名，右手指法=挑抹勾剔打摘托擘撮轮历滚拂等，弦号一~七，徽位一~十三。' +
     '无法辨认的减字输出?占位。';
 
+  // 按 Key 前缀识别服务商：sk-ant-→Anthropic；sk-→OpenAI；含「.」的→智谱（免费视觉）
+  function providerOf(key) {
+    if (key.indexOf('sk-ant-') === 0) return 'anthropic';
+    if (key.indexOf('sk-') === 0) return 'openai';
+    if (key.indexOf('.') > 0) return 'zhipu';
+    return 'openai';
+  }
+  window.__ocrProvider = providerOf; // 供测试
+
   function callVision(b64) {
-    $('ocrMsg').textContent = '🔍 AI 识谱中（约 10~30 秒，请勿离开）…';
+    $('ocrMsg').textContent = '🔍 AI 识谱中（约 10~40 秒，请勿离开）…';
     var key = getKey();
-    var isAnthropic = key.indexOf('sk-ant-') === 0;   // 按 Key 前缀自动识别服务商
+    var prov = providerOf(key);
     var url, headers, body;
-    if (isAnthropic) {
+    if (prov === 'anthropic') {
       url = 'https://api.anthropic.com/v1/messages';
       headers = {
         'x-api-key': key,
@@ -95,12 +104,14 @@
           ]
         }]
       };
-    } else {                                          // OpenAI（sk-…）
-      url = 'https://api.openai.com/v1/chat/completions';
+    } else {                                          // OpenAI（sk-…）或 智谱（含.）——同为 OpenAI 兼容格式
+      var isZhipu = prov === 'zhipu';
+      url = isZhipu ? 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+                    : 'https://api.openai.com/v1/chat/completions';
       headers = { 'Authorization': 'Bearer ' + key, 'content-type': 'application/json' };
       body = {
-        model: 'gpt-4o',
-        max_tokens: 2000,
+        model: isZhipu ? 'glm-4.6v-flash' : 'gpt-4o',
+        max_tokens: isZhipu ? 4000 : 2000,
         messages: [{
           role: 'user',
           content: [
@@ -115,7 +126,7 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     }).then(function (j) {
-      var txt = (isAnthropic
+      var txt = (prov === 'anthropic'
         ? (j.content && j.content[0] && j.content[0].text || '')
         : (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content || '')).trim();
       txt = txt.replace(/^```[^\n]*\n?/, '').replace(/```\s*$/, '').trim();

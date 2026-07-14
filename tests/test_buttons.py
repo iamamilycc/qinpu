@@ -155,6 +155,12 @@ with sync_playwright() as p:
     }""")
     chk(midi.startswith("5 6 7"), "🎹MIDI导入引擎")
 
+    # 拍谱识谱：服务商识别（智谱/Claude/OpenAI）
+    print("— 拍谱识谱服务商识别 —")
+    chk(pg.evaluate("__ocrProvider('abcd1234.efgh5678')") == "zhipu", "智谱 key（xxx.yyy）→ zhipu")
+    chk(pg.evaluate("__ocrProvider('sk-ant-abc123')") == "anthropic", "sk-ant-→ anthropic")
+    chk(pg.evaluate("__ocrProvider('sk-proj-abc')") == "openai", "sk-→ openai")
+
     # 教程目录锚点
     print("— 教程目录 —")
     pg.click("#tab-tut"); pg.wait_for_timeout(200)

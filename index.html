@@ -230,13 +230,13 @@
       <button onclick="saveToLib('p2j')">💾 存入曲库</button>
       <button onclick="openLib()">📂 我的曲库</button>
       <button onclick="shareLink('p2j')">🔗 分享链接</button>
-      <details style="margin-left:auto"><summary style="cursor:pointer;font-size:.85rem;color:#8a7c62">高级：📷 拍谱识谱</summary>
-        <div style="margin-top:6px"><button onclick="pickScorePhoto()">📷 选择谱面照片</button><span class="tg-hint">（需自备 AI 的 API Key，按量计费）</span></div>
+      <details style="margin-left:auto"><summary style="cursor:pointer;font-size:.85rem;color:#8a7c62">高级：📷 拍谱识谱（AI）</summary>
+        <div style="margin-top:6px"><button onclick="pickScorePhoto()">📷 选择谱面照片</button><span class="tg-hint">（智谱有免费视觉模型，或自备 Claude/OpenAI Key）</span></div>
       </details>
     </div>
     <input type="file" id="scorePhotoIn" accept="image/*" capture="environment" style="display:none" onchange="onScorePhoto(this)">
     <div id="apiKeyRow" style="display:none; margin-top:8px">
-      <input type="password" id="apiKeyIn" placeholder="sk-ant-…(Claude) 或 sk-…(OpenAI)，只存本机" style="width:70%; padding:7px 8px; border:1px solid var(--line); border-radius:6px">
+      <input type="password" id="apiKeyIn" placeholder="智谱 xxx.yyy（免费）/ sk-ant-…(Claude) / sk-…(OpenAI)，只存本机" style="width:70%; padding:7px 8px; border:1px solid var(--line); border-radius:6px">
       <button onclick="saveApiKey()" style="padding:7px 12px">保存</button>
     </div>
     <p id="ocrMsg" class="note"></p>
