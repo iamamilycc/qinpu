@@ -231,7 +231,14 @@
       <button onclick="openLib()">📂 我的曲库</button>
       <button onclick="shareLink('p2j')">🔗 分享链接</button>
       <details style="margin-left:auto"><summary style="cursor:pointer;font-size:.85rem;color:#8a7c62">高级：📷 拍谱识谱（AI）</summary>
-        <div style="margin-top:6px"><button onclick="pickScorePhoto()">📷 选择谱面照片</button><span class="tg-hint">（智谱有免费视觉模型，或自备 Claude/OpenAI Key）</span></div>
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button onclick="pickScorePhoto()">📷 选择谱面照片</button>
+          <select id="zhipuModel" title="智谱识别精度（仅用智谱 Key 时生效）">
+            <option value="glm-4.6v-flash" selected>免费·GLM-4.6V-Flash</option>
+            <option value="glm-4.6v">高精度·GLM-4.6V（付费约1~2分/张）</option>
+          </select>
+          <span class="tg-hint">智谱有免费视觉模型，或自备 Claude/OpenAI Key</span>
+        </div>
       </details>
     </div>
     <input type="file" id="scorePhotoIn" accept="image/*" capture="environment" style="display:none" onchange="onScorePhoto(this)">

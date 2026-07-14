@@ -109,8 +109,9 @@
       url = isZhipu ? 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
                     : 'https://api.openai.com/v1/chat/completions';
       headers = { 'Authorization': 'Bearer ' + key, 'content-type': 'application/json' };
+      var zModel = ($('zhipuModel') && $('zhipuModel').value) || 'glm-4.6v-flash';
       body = {
-        model: isZhipu ? 'glm-4.6v-flash' : 'gpt-4o',
+        model: isZhipu ? zModel : 'gpt-4o',
         max_tokens: isZhipu ? 4000 : 2000,
         messages: [{
           role: 'user',
