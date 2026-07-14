@@ -82,7 +82,7 @@ with sync_playwright() as p:
     chk(pg.input_value("#inJianpu").startswith("2/4 5 6"), "分享链接自动载谱")
 
     print("— 循环/跟弹/竖排/高山 —")
-    pg.click("text=名曲：高山·页1(待校)"); pg.wait_for_timeout(1000)
+    pg.click("text=名曲：高山·页1"); pg.wait_for_timeout(1000)
     chk(pg.locator("#scoreB .jz-cell").count() >= 55, "高山示例转换")
     chk("" == pg.inner_text("#convMsg").strip(), "高山谱文无解析报错")
     pg.evaluate("stepPlay(1)"); pg.wait_for_timeout(300)

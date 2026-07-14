@@ -59,12 +59,34 @@ textarea { width: 100%; resize: vertical; }
 
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 button { font-family: inherit; }
-.btn-row button, .btn-row .primary {
+.btn-row button, .btn-row .primary,
+.tool-group button, .tool-group select, .tool-group .primary {
   padding: 9px 16px; font-size: .95rem; border-radius: 8px; cursor: pointer;
   border: 1px solid var(--line); background: #fff; color: var(--ink);
 }
-.btn-row .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-row .primary:hover { background: var(--accent-dark); }
+.btn-row .primary, .tool-group .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-row .primary:hover, .tool-group .primary:hover { background: var(--accent-dark); }
+
+/* 功能分区工具组：一行一类，带类别标签 */
+.tool-group {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  padding: 8px 12px 8px 10px; margin-bottom: 8px;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+.tool-group .tg-label {
+  font-size: .78rem; font-weight: 600; color: var(--accent-dark, #8a5a2a);
+  letter-spacing: .04em; white-space: nowrap;
+  padding-right: 8px; margin-right: 2px; border-right: 1px solid var(--line);
+}
+.tool-group select { padding: 8px 10px; }
+.tool-group button { padding: 8px 13px; font-size: .92rem; }
+.tool-group input[type="number"] { width: 54px; padding: 6px; border: 1px solid var(--line); border-radius: 6px; font-family: inherit; }
+.tool-group .tg-hint { font-size: .85rem; color: #6d5f47; }
+@media (max-width: 600px) {
+  .tool-group { padding: 8px; }
+  .tool-group .tg-label { width: 100%; border-right: none; padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px solid var(--line); }
+}
 
 .score {
   display: flex; flex-wrap: wrap; gap: 8px; padding: 10px;
@@ -169,7 +191,7 @@ button { font-family: inherit; }
 
 /* ── 打印：只印谱面 ── */
 @media print {
-  header, .tabs, footer, .btn-row, .note, .warn, .card:not(.score-card) { display: none !important; }
+  header, .tabs, footer, .btn-row, .tool-group, .note, .warn, .card:not(.score-card) { display: none !important; }
   body { background: #fff; max-width: none; }
   .card { border: none; box-shadow: none; }
   .score { border: none; background: #fff; }

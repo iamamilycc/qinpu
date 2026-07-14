@@ -49,6 +49,9 @@
     <textarea id="jzTextIn" rows="2" placeholder="例：散勾一 勾二 挑三 | 名九挑四 上七六 大七六托五 泛七挑一"></textarea>
     <div class="btn-row" style="margin-top:6px">
       <button class="primary" onclick="parseJzText()">📜 解析生成简谱</button>
+    </div>
+    <div class="tool-group" style="margin-top:8px">
+      <span class="tg-label">曲库</span>
       <button onclick="saveToLib('j2p')">💾 存入曲库</button>
       <button onclick="openLib()">📂 我的曲库</button>
       <button onclick="shareLink('j2p')">🔗 分享链接</button>
@@ -170,14 +173,15 @@
 
   <section class="card score-card">
     <h2>② 三行对照谱（共 <span id="cntA">0</span> 字）</h2>
-    <div class="btn-row" style="margin-bottom:8px">
+    <div class="tool-group">
+      <span class="tg-label">播放</span>
       <button onclick="playA()">▶ 试听整段</button>
       <button onclick="stopPlay()">⏹ 停止</button>
       <button onclick="printScore('A')">🖨 打印 / 存PDF</button>
-      <span style="align-self:center;font-size:.85rem;color:#6d5f47">🐢 <input type="range" class="spd-range" min="50" max="150" value="100" step="5" style="vertical-align:middle;width:110px" oninput="setSpeed(this.value)"> <span class="spd-label">原速</span></span>
+      <span class="tg-hint">🐢 <input type="range" class="spd-range" min="50" max="150" value="100" step="5" style="vertical-align:middle;width:110px" oninput="setSpeed(this.value)"> <span class="spd-label">原速</span></span>
     </div>
-    <div class="btn-row" style="margin-bottom:8px">
-      <span style="align-self:center;font-size:.88rem;color:#6d5f47">🎭 打谱风格：</span>
+    <div class="tool-group">
+      <span class="tg-label">🎭 打谱风格</span>
       <button class="primary" onclick="playStyle('wen')">文句法 ▶</button>
       <button onclick="playStyle('yun')">匀速吟诵 ▶</button>
       <button onclick="playStyle('ge')">琴歌韵 ▶</button>
@@ -199,30 +203,37 @@
     <input id="titleB" placeholder="曲名 · 出处/打谱人（可空，随谱打印）" style="width:100%;margin-bottom:6px;padding:8px;border:1px solid var(--line);border-radius:8px;font-family:inherit">
     <textarea id="inJianpu" rows="3" placeholder="例：2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3"></textarea>
     <p class="note">记法：<b>|</b> 小节线　<b>2/4</b> 拍号　<b>1.</b> 附点　<b>-</b> 延音　<b>0</b> 休止　<b>1'</b> 高八度　<b>1,</b> 低八度　<b>#4</b> 升半音　<b>连写 12</b> = 八分音符组　<b>b3</b> 降半音　<b>6_</b> 单八分　<b>1._</b> 附点八分　<b>2222=</b>/<b>6=</b> 十六分　<b>(555)</b> 三连音　<b>0_ 0=</b> 短休止　<b>5^</b> 延长号　<b>T=60</b> 速度　<b>{3}5</b> 倚音　<b>5~ 5</b> 连音线　<b>/</b> 换行　<b>|:</b> <b>:|</b> 反复　<b>[1</b> <b>]</b> <b>[2</b> 一/二房（试听自动按反复顺序展开）</p>
-    <div class="btn-row">
+    <div class="tool-group">
+      <span class="tg-label">生成</span>
       <button class="primary" onclick="convertJianpu()">🎼 转换为减字谱</button>
-      <select onchange="setArrProfile(this.value)" title="编配画像：一谱多编" style="font-family:inherit;padding:8px;border:1px solid var(--line);border-radius:8px">
+      <select onchange="setArrProfile(this.value)" title="编配画像：一谱多编">
         <option value="yuan2" selected>编配：圆·走韵悠扬</option>
         <option value="hong">编配：宏·散音骨架</option>
         <option value="yuan3">编配：远·泛音清冷</option>
       </select>
-      <select onchange="setOrnDensity(this.value)" title="韵味装饰密度" style="font-family:inherit;padding:8px;border:1px solid var(--line);border-radius:8px">
+      <select onchange="setOrnDensity(this.value)" title="韵味装饰密度">
         <option value="0.6" selected>韵味：中</option>
         <option value="0.3">韵味：淡</option>
         <option value="0.9">韵味：浓</option>
       </select>
-      <button id="humBtn" onclick="toggleHum()">🎤 哼唱转谱</button>
-      <button onclick="document.getElementById('midiIn').click()">🎹 导入 MIDI</button>
+    </div>
+    <div class="tool-group">
+      <span class="tg-label">获取旋律</span>
       <button onclick="loadDemo()">🎵 名曲：普庵咒</button>
       <button onclick="loadDemo2()">🎵 名曲：关山月</button>
-      <button onclick="loadDemo3()">🎵 名曲：高山·页1(待校)</button>
+      <button onclick="loadDemo3()">🎵 名曲：高山·页1</button>
+      <button id="humBtn" onclick="toggleHum()">🎤 哼唱转谱</button>
+      <button onclick="document.getElementById('midiIn').click()">🎹 导入 MIDI</button>
+    </div>
+    <div class="tool-group">
+      <span class="tg-label">曲库</span>
       <button onclick="saveToLib('p2j')">💾 存入曲库</button>
       <button onclick="openLib()">📂 我的曲库</button>
       <button onclick="shareLink('p2j')">🔗 分享链接</button>
+      <details style="margin-left:auto"><summary style="cursor:pointer;font-size:.85rem;color:#8a7c62">高级：📷 拍谱识谱</summary>
+        <div style="margin-top:6px"><button onclick="pickScorePhoto()">📷 选择谱面照片</button><span class="tg-hint">（需自备 AI 的 API Key，按量计费）</span></div>
+      </details>
     </div>
-    <details style="margin-top:8px"><summary style="cursor:pointer;font-size:.88rem;color:#8a7c62">高级：📷 拍谱识谱（需自备 AI 的 API Key，按量计费）</summary>
-      <div style="margin-top:6px"><button onclick="pickScorePhoto()">📷 选择谱面照片</button></div>
-    </details>
     <input type="file" id="scorePhotoIn" accept="image/*" capture="environment" style="display:none" onchange="onScorePhoto(this)">
     <div id="apiKeyRow" style="display:none; margin-top:8px">
       <input type="password" id="apiKeyIn" placeholder="sk-ant-…(Claude) 或 sk-…(OpenAI)，只存本机" style="width:70%; padding:7px 8px; border:1px solid var(--line); border-radius:6px">
@@ -235,25 +246,32 @@
   </section>
   <section class="card score-card">
     <h2>② 三行对照谱（简谱＋五线谱＋减字）</h2>
-    <div class="btn-row" style="margin-bottom:8px">
+    <div class="tool-group">
+      <span class="tg-label">播放</span>
       <button onclick="playB()">▶ 试听（真琴采样）</button>
       <button onclick="stopPlay()">⏹ 停止</button>
-      <button onclick="printScore('B')">🖨 打印 / 存PDF</button>
-      <button onclick="openVertical()">📜 竖排减字谱</button>
-      <span style="align-self:center;font-size:.85rem;color:#6d5f47">🐢 <input type="range" class="spd-range" min="50" max="150" value="100" step="5" style="vertical-align:middle;width:110px" oninput="setSpeed(this.value)"> <span class="spd-label">原速</span></span>
+      <span class="tg-hint">🐢 <input type="range" class="spd-range" min="50" max="150" value="100" step="5" style="vertical-align:middle;width:110px" oninput="setSpeed(this.value)"> <span class="spd-label">原速</span></span>
     </div>
-    <div class="btn-row" style="margin-bottom:8px;align-items:center">
-      <span style="font-size:.88rem;color:#6d5f47">🔁 第</span>
-      <input id="loopA" type="number" min="1" value="1" style="width:56px;padding:6px;border:1px solid var(--line);border-radius:6px">
-      <span style="font-size:.88rem;color:#6d5f47">–</span>
-      <input id="loopB" type="number" min="1" value="4" style="width:56px;padding:6px;border:1px solid var(--line);border-radius:6px">
-      <span style="font-size:.88rem;color:#6d5f47">小节</span>
-      <button onclick="playLoop()">循环播放</button>
-      <span style="font-size:.88rem;color:#6d5f47;margin-left:10px">👣 跟弹：</span>
+    <div class="tool-group">
+      <span class="tg-label">段落循环</span>
+      <span class="tg-hint">第</span>
+      <input id="loopA" type="number" min="1" value="1">
+      <span class="tg-hint">–</span>
+      <input id="loopB" type="number" min="1" value="4">
+      <span class="tg-hint">小节</span>
+      <button onclick="playLoop()">🔁 循环播放</button>
+    </div>
+    <div class="tool-group">
+      <span class="tg-label">逐音跟弹</span>
       <button onclick="stepPlay(-1)">◀ 上一音</button>
       <button onclick="stepPlay(1)">▶ 下一音</button>
       <button onclick="stepReset()">⏮ 重头</button>
-      <button id="undoBtn" onclick="undoFinger()" disabled title="撤销改指法（⌘Z）" style="margin-left:10px">↩ 撤销改指法</button>
+    </div>
+    <div class="tool-group">
+      <span class="tg-label">编辑·输出</span>
+      <button id="undoBtn" onclick="undoFinger()" disabled title="撤销改指法（⌘Z）">↩ 撤销改指法</button>
+      <button onclick="printScore('B')">🖨 打印 / 存PDF</button>
+      <button onclick="openVertical()">📜 竖排减字谱</button>
     </div>
     <p id="stepInfo" class="note"></p>
     <div id="scoreB" class="score"></div>
