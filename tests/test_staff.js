@@ -72,6 +72,31 @@ ceq('清商调号=3个', sigCount('qingshang'), 3);
 ceq('凄凉调号=2个(♭B♭E)', sigCount('qiliang'), 2);
 ceq('慢宫调号=1个(F♯)', sigCount('mangong'), 1);
 
+// ── 加线（ledger line）条数：极高/极低音超出五线时补的短横线 ──
+// 低音谱表标准：谱线 G2 B2 D3 F3 A3；期望值均按乐理核对过。
+P.setTuning('zheng'); S.setKey(5);
+function ledgerCount(semi) {
+  var svg = S.cell([{ semi: semi }], {});
+  return (svg.match(/class="st-line"/g) || []).length - 5; // 减去5条谱线
+}
+function leq(name, semi, exp) {
+  var got = ledgerCount(semi);
+  var ok = got === exp;
+  console.log((ok ? 'pass ' : 'FAIL ') + name + '(semi' + semi + ')加线' + (ok ? '=' + exp : '期望' + exp + '得' + got));
+  if (!ok) fails++;
+}
+leq('C2一弦散音', 0, 2);   // E2、C2 两条下加线
+leq('D2', 2, 1);
+leq('E2第一下加线', 4, 1);
+leq('F2下方间', 5, 0);
+leq('G2最低谱线', 7, 0);
+leq('D3中线', 14, 0);
+leq('A3最高谱线', 21, 0);
+leq('中央C(C4)', 24, 1); // 第一上加线
+leq('D4', 26, 1);
+leq('E4第二上加线', 28, 2);
+leq('C5', 36, 4);
+
 // ── 全覆盖：所有调 × 全音域「往返校验」——证明显示音名==实际音高 ──
 (function roundTripAll() {
   var NAT = S._natpc, bad = 0, checked = 0;
