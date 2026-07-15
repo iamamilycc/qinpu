@@ -53,17 +53,18 @@ with sync_playwright() as p:
     chk("方向存疑" not in conv_warn and "⚠" not in conv_warn, "无编配方向告警")
 
     print("— 长音吟猱、指法防单调 —")
-    pg.fill("#inJianpu", "2/4 4 - | 4 - | 4 - | 4 - ||")  # 全是长按音♭B
+    import re
+    pg.fill("#inJianpu", "2/4 4 - | 4 - ||")  # 长按音♭B → 加猱韵
     pg.click("text=转换为减字谱"); pg.wait_for_timeout(600)
     labs2 = labels(pg)
     chk(any("猱" in x or "吟" in x for x in labs2), "长按音自动加吟/猱(韵味)")
-    # 指法防单调：同一串♭B长音不应全是同一右手指法
-    import re
-    rights = []
-    for x in labs2:
-        m = re.search(r"(抹|挑|勾|剔|打|摘|托|擘)", x)
-        if m: rights.append(m.group(1))
-    chk(len(set(rights)) >= 2 if len(rights) >= 4 else True, "重复长音指法有变化(防单调)")
+    # 指法防单调：同一句内重复同音不应全是同一右手指法（对句配对会让「相同小节」一致，
+    # 那是设计使然；此处测「一句内」重复音的八法轮转/交替）
+    pg.fill("#inJianpu", "2/4 4 4 4 4 | 4 4 4 4 ||")
+    pg.click("text=转换为减字谱"); pg.wait_for_timeout(600)
+    rights = [m.group(1) for x in labels(pg) for m in [re.search(r"(抹|挑|勾|剔|打|摘|托|擘)", x)] if m]
+    chk(len(set(rights)) >= 2 if len(rights) >= 4 else True,
+        "一句内重复同音指法有变化(防单调)：" + "".join(rights))
 
     print("— 散按相间（不全散/不全按）—")
     pg.fill("#inJianpu", "2/4 1 2 | 3 5 | 6 1 | 2 3 ||")
@@ -72,6 +73,41 @@ with sync_playwright() as p:
     n_san = sum(1 for x in labs3 if "散音" in x)
     n_an = sum(1 for x in labs3 if "徽" in x and "散音" not in x)
     chk(n_san >= 1 and n_an >= 1, "同段散音+按音并存(散按相间,音色有对比)")
+
+    print("— 泛音成大段（[泛 … ]泛 段内强制泛音）—")
+    pg.select_option("#selTuning", "zheng"); pg.wait_for_timeout(150)
+    pg.fill("#inJianpu", "2/4 5 6 1' | [泛 1' 6 5 6 5 1' ]泛 | 5 3 2 1")
+    pg.click("text=转换为减字谱"); pg.wait_for_timeout(600)
+    flabs = labels(pg)
+    seg = [x for x in flabs if "泛音" in x]
+    chk(len(seg) >= 6, "泛音段6音全部取泛音，实得 %d 个泛音" % len(seg))
+    # 段外的音(散/按)不应被强制成泛：首音 5(散六弦)、末句 5 3 2 1 应有非泛音
+    non_fan_outside = any(("泛音" not in x and x) for x in (flabs[:3] + flabs[-4:]))
+    chk(non_fan_outside, "泛音段外仍是散/按音（未污染全曲）")
+
+    print("— 秋风词八度核准（内置曲·慢角调 base=12 回归）—")
+    # 曾 bug：manjiao 中音1错落一弦C2地板，低音句 6̣5̣6̣ 掉出地板→红✕不可弹
+    pg.click("text=秋风词"); pg.wait_for_timeout(900)
+    chk(pg.eval_on_selector("#selTuning", "e=>e.value") == "manjiao", "秋风词自动切慢角调")
+    miss = pg.eval_on_selector_all("#scoreB .jz-miss", "els=>els.length")
+    chk(miss == 0, "秋风词无不可弹音(红✕)——低音句全部落在弦上，实得 %d 个" % miss)
+    qlabs = labels(pg)
+    # 秋风清首音(中音5=g3)应为六弦按音，对齐原谱「大指九徽六分」——绝非旧版散音四弦(G2)
+    chk(len(qlabs) > 0 and "六弦" in qlabs[0] and "散音" not in qlabs[0],
+        "秋风清首音=六弦按音(八度对，非散音四弦低八度)：" + (qlabs[0] if qlabs else "空"))
+
+    print("— 撮双弦框架（左臂弦数不得缺失）—")
+    pg.select_option("#selTuning", "zheng"); pg.wait_for_timeout(150)
+    # 末音落一弦散C：八度音=六弦散→合规撮，两臂弦数须齐（曾 bug：左臂 ls=0 缺弦数）
+    pg.fill("#inJianpu", "2/4 3 2 | 5, -"); pg.click("text=转换为减字谱"); pg.wait_for_timeout(500)
+    cuolab = labels(pg)[-1]
+    # 大撮＝勾低弦(一弦)+托高弦(六弦)，两臂弦数须齐；曾 bug：左臂缺弦数 + 指法用挑
+    chk("撮" in cuolab and "勾一弦" in cuolab and "托六弦" in cuolab,
+        "大撮=勾低弦+托高弦，两臂弦数齐（勾一弦·托六弦）：" + cuolab)
+    # 正调 F 末音：八度音 f 不在任何散弦→不得出残缺撮，退回单音指法
+    pg.fill("#inJianpu", "2/4 5 6 | 1 -"); pg.click("text=转换为减字谱"); pg.wait_for_timeout(500)
+    flab = labels(pg)[-1]
+    chk("撮" not in flab, "八度音非散弦时退回单音（不出残缺撮）：" + flab)
 
     chk(len(errs) == 0, "全程无 JS 错误" + ("" if not errs else "：" + "; ".join(errs[:2])))
     b.close()

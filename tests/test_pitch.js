@@ -71,15 +71,22 @@ eq('11音旋律往返零误差', roundtripOK, true);
 P.setTuning('ruibin');   // 紧五：五弦 A→Bb，1=bB
 eq('蕤宾五弦散音=1(bB)', P.semitoneToJianpu(P.sanSemitone(5)).text, '1');
 eq('蕤宾三弦散音=低5(F)', P.semitoneToJianpu(P.sanSemitone(3)).text, '5,');
-P.setTuning('manjiao');  // 慢三：三弦 F→E，1=C
-eq('慢角三弦散音=3(E)', P.semitoneToJianpu(P.sanSemitone(3)).text, '3');
-eq('慢角一弦散音=1(C)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1');
+P.setTuning('manjiao');  // 慢三：三弦 F→E，1=C；记谱基准 base=12（六弦c=中音1，原谱定弦图铁证）
+eq('慢角六弦散音=中音1(c)', P.semitoneToJianpu(P.sanSemitone(6)).text, '1');
+eq('慢角三弦散音=低音3(E)', P.semitoneToJianpu(P.sanSemitone(3)).text, '3,');
+eq('慢角一弦散音=低音1(C,地板)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1,');
+// 地板守卫：秋风词低音句(相亲相见)的 6̣ 5̣ 1̣ 曾因记低八度掉出一弦散C→红叉不可弹
+eq('慢角低音6̣=A2五弦散(可弹)', P.jianpuToSemitone(6, false, -1), 9);
+eq('慢角低音1̣=C2一弦散(正好地板)', P.jianpuToSemitone(1, false, -1), 0);
+eq('慢角低音6̣有可弹位', P.candidatesFor(P.jianpuToSemitone(6, false, -1), null).length > 0, true);
+eq('慢角低音1̣有可弹位', P.candidatesFor(P.jianpuToSemitone(1, false, -1), null).length > 0, true);
 P.setTuning('huangzhong'); // 慢一紧五：一弦 C→Bb,
 eq('黄钟一弦散音=低1(bB,)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1,');
 P.setTuning('manshang'); // 慢二：二弦=一弦同音；弦法表调性 1=C（特写核对后由 F 改正）
 eq('慢商一二弦同音', P.sanSemitone(1) === P.sanSemitone(2), true);
-eq('慢商一弦散音=1(C)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1');
-eq('慢商三弦散音=4(F)', P.semitoneToJianpu(P.sanSemitone(3)).text, '4');
+eq('慢商六弦散音=中音1(c)', P.semitoneToJianpu(P.sanSemitone(6)).text, '1');
+eq('慢商一弦散音=低音1(C)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1,');
+eq('慢商三弦散音=低音4(F)', P.semitoneToJianpu(P.sanSemitone(3)).text, '4,');
 P.setTuning('qiliang'); // 紧二五：二弦 D→bE、五弦 A→bB，1=bB（琴书弦法表）
 eq('凄凉五弦散音=1(bB)', P.semitoneToJianpu(P.sanSemitone(5)).text, '1');
 eq('凄凉二弦散音=低4(bE)', P.semitoneToJianpu(P.sanSemitone(2)).text, '4,');

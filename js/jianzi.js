@@ -382,7 +382,12 @@
       s += note.waiwei ? '徽外 ' : (NUM[note.hui] + '徽' + (note.fen ? NUM[note.fen] + '分' : '') + ' ');
       if (note.type === 'fan') s = '泛音 ' + s;
     }
-    s += (note.right || '挑') + NUM[note.string] + '弦';
+    if (note.right === '撮' && note.cuo) {
+      // 撮＝双弦齐鸣，两臂各记一弦（左勾低弦、右托/挑本弦）——完整报出两根弦
+      s += '撮（' + note.cuo.lt + NUM[note.cuo.ls] + '弦·' + note.cuo.rt + NUM[note.cuo.rs] + '弦）';
+    } else {
+      s += (note.right || '挑') + NUM[note.string] + '弦';
+    }
     if (note.orn && note.orn.length) s += ' ' + note.orn.join('');
     return s;
   }

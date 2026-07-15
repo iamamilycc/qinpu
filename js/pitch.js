@@ -13,19 +13,23 @@
 (function (global) {
   'use strict';
 
-  // ── 调弦法（各弦散音相对正调一弦 C 的半音数；key=简谱"1"的音高）──
+  // ── 调弦法（各弦散音相对正调一弦 C 的半音数；key=简谱"1"的音高/调号）──
   // 全部十五调按琴书《古琴弦法表》核对（2026-07-12 特写照片，逐格确认）
   // 调性双选的（间弦 C或♭B、无媒 C或G）取前者为记谱基准
+  // base：简谱"中音1"相对一弦C的半音数（记谱基准八度）。缺省=key（多数调tonic在中低弦）。
+  //   1=C 且 tonic 落在六弦 c(=12) 的四调（慢角/玉女/慢商/间弦），中音1=六弦c，
+  //   故 base=12——否则中音1会错落到一弦C2(地板)，全曲记低八度、低音句掉出地板变红叉。
+  //   依据：秋风词原谱定弦图「1̣2̣3̣5̣6̣ 1 2」前五弦下加点=低音、六弦=中音1（2026-07-15核对）。
   var TUNINGS = {
     zheng:      { name: '正调 1=F',            open: [0, 2, 5, 7, 9, 12, 14],   key: 5,  flats: [10] },
     ruibin:     { name: '蕤宾调·紧五 1=♭B',    open: [0, 2, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] },
     huangzhong: { name: '黄钟调·紧五慢一 1=♭B', open: [-2, 2, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] },
     liyou:      { name: '离忧调·紧五慢一二 1=♭B', open: [-2, 0, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] },
     qiliang:    { name: '凄凉调·紧二五 1=♭B',   open: [0, 3, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] },
-    manjiao:    { name: '慢角调·慢三 1=C',     open: [0, 2, 4, 7, 9, 12, 14],   key: 0,  flats: [] },
-    yunv:       { name: '玉女调·慢一三 1=C',   open: [-1, 2, 4, 7, 9, 12, 14],  key: 0,  flats: [] },
-    manshang:   { name: '慢商调·慢二 1=C',     open: [0, 0, 5, 7, 9, 12, 14],   key: 0,  flats: [10] },
-    jianxian:   { name: '间弦调·紧五慢三 1=C',  open: [0, 2, 4, 7, 10, 12, 14],  key: 0,  flats: [10] },
+    manjiao:    { name: '慢角调·慢三 1=C',     open: [0, 2, 4, 7, 9, 12, 14],   key: 0,  base: 12, flats: [] },
+    yunv:       { name: '玉女调·慢一三 1=C',   open: [-1, 2, 4, 7, 9, 12, 14],  key: 0,  base: 12, flats: [] },
+    manshang:   { name: '慢商调·慢二 1=C',     open: [0, 0, 5, 7, 9, 12, 14],   key: 0,  base: 12, flats: [10] },
+    jianxian:   { name: '间弦调·紧五慢三 1=C',  open: [0, 2, 4, 7, 10, 12, 14],  key: 0,  base: 12, flats: [10] },
     wumei:      { name: '无媒调·慢三六 1=C',   open: [0, 2, 4, 7, 9, 11, 14],   key: 0,  flats: [] },
     mangong:    { name: '慢宫调·慢一三六 1=G',  open: [-1, 2, 4, 7, 9, 11, 14],  key: 7,  flats: [] },
     shangdiao:  { name: '商调·慢一三四六 1=D',  open: [-1, 2, 4, 6, 9, 11, 14],  key: 2,  flats: [] },
@@ -44,7 +48,7 @@
     if (!t) return false;
     CUR_TUNING = id;
     for (var i = 0; i < 7; i++) OPEN[i] = t.open[i];
-    F_OFFSET = t.key;
+    F_OFFSET = (t.base !== undefined ? t.base : t.key);
     return true;
   }
   function tuning() { return TUNINGS[CUR_TUNING]; }
@@ -172,6 +176,11 @@
           list.push({ type: 'fan', string: s2, hui: parseInt(hui, 10), score: fsc });
         }
       }
+    }
+    // 泛音段（forceFan）：本段应整段用泛音（成大段）。凡该音有可得泛音，
+    // 大幅提前其优先级使之必被选中；若该音在琴上无谐波节点（罕见），自然回落按/散。
+    if (ctx.forceFan && list.some(function (c) { return c.type === 'fan'; })) {
+      list.forEach(function (c) { if (c.type === 'fan') c.score -= 100; });
     }
     list.sort(function (a, b) { return a.score - b.score; });
     return list;

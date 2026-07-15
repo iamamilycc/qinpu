@@ -201,12 +201,15 @@
 
   function parseScore(text) {
     var toks = [], raw = text.trim().split(/\s+/);
+    var inFan = false;  // 泛音段：[泛 … ]泛 之间的音符强制取泛音（成大段，非零星）
     raw.forEach(function (w) {
       if (!w) return;
       if (w === '|' || w === '||') { toks.push({ kind: 'bar', fin: w === '||' }); return; }
       if (w === '|:') { toks.push({ kind: 'bar', rep: 'L' }); return; }
       if (w === ':|') { toks.push({ kind: 'bar', rep: 'R' }); return; }
       if (w === '/') { toks.push({ kind: 'br' }); return; }   // 手动换行
+      if (w === '[泛' || w === '[fan') { inFan = true; return; }   // 泛起
+      if (w === ']泛' || w === ']fan') { inFan = false; return; } // 泛止
       if (w === '[1') { toks.push({ kind: 'volta', n: 1 }); return; }  // 1房
       if (w === '[2') { toks.push({ kind: 'volta', n: 2 }); return; }  // 2房
       if (w === ']') { toks.push({ kind: 'voltaEnd' }); return; }
@@ -247,7 +250,7 @@
         kind: 'notes', group: group, dotted: dotted,
         beam: group.length > 1, eighth: eighth && group.length === 1,
         six: six, ferm: ferm, tie: tie, grace: grace,
-        triplet: trip && group.length === 3
+        triplet: trip && group.length === 3, fanForce: inFan
       });
     });
     return toks;
@@ -275,7 +278,8 @@
           mStart: barJustSeen && gi === 0, prevHui: prevHui,
           profile: ARR_PROFILES[curArrProfile],
           fast: !!(t.beam || t.six || t.triplet),  // 人体力学：快句手来不及大跳
-          sanRun: sanRun                            // 散音连用计数→散按相间
+          sanRun: sanRun,                           // 散音连用计数→散按相间
+          forceFan: t.fanForce                      // 泛音段：本音在 [泛…]泛 内→强制取泛
         });
         if (cands.length === 0) {
           failed.push(jpText(n));
@@ -450,17 +454,31 @@
       walkChain = 0;
       var semi = P.noteSemitone(candToNote(c));
       var right, orn = [];
+      // 撮＝双弦框架（组字文法·框架律）：左臂勾低八度弦、右臂托/挑本音弦，双弦齐鸣。
+      // ⚠框架字两臂只记弦数、无徽位槽 → 唯有「本音在散弦 且 其八度音也在散弦」时才 well-formed。
+      //   末音/长音优先撮；八度音不落散弦（如正调 F 末音）→ cuoInfo=null，不拦截，
+      //   让本音落回常规指法逻辑（重复音交替／调色板轮转），既不出残缺撮、也不单调。
+      var cuoInfo = null;
+      if (it.final || it.long) {
+        var cuoS2 = semi - 12 >= 0 ? semi - 12 : semi + 12;
+        for (var cuoI = 0; cuoI < 7; cuoI++) {
+          if (Math.abs(P.OPEN[cuoI] - cuoS2) < 0.01 && c.type === 'san') {
+            // 撮＝双弦齐鸣，低弦一律中指勾；高弦指法看两弦距离：
+            //   临近弦（相隔≤3，如一三/二四弦）＝食指挑（小撮）；
+            //   远距弦（相隔≥4，如一六弦八度）＝大指托（大撮）——大指才够得着。
+            //   （按弦高低定指法，与旋律音是哪根无关。）
+            var partner = cuoI + 1;
+            var loStr = Math.min(c.string, partner), hiStr = Math.max(c.string, partner);
+            var hiRt = (hiStr - loStr) >= 4 ? '托' : '挑';
+            cuoInfo = { lt: '勾', ls: loStr, rt: hiRt, rs: hiStr };
+            break;
+          }
+        }
+      }
       if (it.trip !== undefined) {
         right = ['摘', '剔', '挑'][it.trip];       // 三连同音 = 轮的拆解
-      } else if (it.final || it.long) {
-        right = '撮';
-        // 撮＝双音框架（组字文法·框架律）：左臂勾低八度弦、右臂托/挑本音弦，与试听双弦齐鸣一致
-        var cuoS2 = semi - 12 >= 0 ? semi - 12 : semi + 12;
-        var cuoLow = 0;
-        for (var cuoI = 0; cuoI < 7; cuoI++) {
-          if (Math.abs(P.OPEN[cuoI] - cuoS2) < 0.01) { cuoLow = cuoI + 1; break; }
-        }
-        it.cuo = { lt: '勾', ls: cuoLow, rt: semi - 12 >= 0 ? '托' : '挑', rs: c.string };
+      } else if (cuoInfo) {
+        right = '撮'; it.cuo = cuoInfo;
       } else if (prev && prev.string === c.string && prevSemi !== null && Math.abs(prevSemi - semi) < 0.01) {
         right = (prev.right === '勾') ? '剔' :
                 (prev.right === '剔') ? '勾' :
@@ -1497,6 +1515,20 @@
   window.loadDemo3 = function () {
     if ($('titleB')) $('titleB').value = '高山 · 据《春草堂琴谱》(1744) 徐元白打谱（第1页·转录待校）';
     $('inJianpu').value = '2/4 T=30 5, 5, | 5, - | 5,. 1_ 6,_ | {5,}5,_ 6,_ 1 | 1. 5_ 3_ | 2 3_3_ / 5, 5, | 3. 2=1= | 6,_1_ 2_1_ | 1 1 - | 5 5,. 1_6,_ | 5, 5 - / T=54 5 5 - | 6=5=3=2=1=6= 5 | 5 - | 5 - 6_1_ | 5 5 - / (555) 5_5_ | 5_6_ 1_2_ | 1_6_ 1 | 1 - | 2 - | 3. 5_ / 5 6_5_ | 3 - | 2_3_ 2_1_ | 6,_ 6_5_ | 6 6_1_ | 2 3_5_ | 3. 5_ 3_2_ / 1_2_ 1 | 1 - | 3 3_5_ | 6_1_ 6 | 6 - | 5 - 5_6_ | 1 - ||';
+    convertJianpu();
+  };
+
+  // 示例：秋风词（慢角调 1=C；据《梅庵琴谱》1931·王吉儒演奏谱/许健记谱）——
+  // 八度已逐音核对原谱简谱（下加点低音区在"相亲相见/难为情/早知如此"数句），节奏近似待校
+  window.loadDemo4 = function () {
+    if ($('selTuning')) { $('selTuning').value = 'manjiao'; $('selTuning').dispatchEvent(new Event('change')); }
+    if ($('titleB')) $('titleB').value = '秋风词 · 慢角调1=C（梅庵琴谱1931·王吉儒演奏谱/许健记谱·八度已核·节奏待校）';
+    $('inJianpu').value =
+      "3/4 T=90 5 5 5 | {1'}1 6 | {5}5 1 | 235 2 2 | 5. 1' 3532 / " +
+      "1 1 1 | 6,5,6, 1,. 2, 6,1,6,5, | 5 5 5, | 323 5 6 1' 3532 / " +
+      "1 1 1 | 6,5, 1 1 1 6, 1 | 2 2 2 | 535 6 1' 5653 / " +
+      "2 2 2 | 323 5 1' 3532 | 1 1 1 | 5,. 6, 2,. 1, | 2 2 2 / " +
+      "1 2 5. 1' 3532 | 1 1 1 | 1 2 5. 1' 3532 | 1 1 1 ||";
     convertJianpu();
   };
 
