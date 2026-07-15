@@ -92,6 +92,24 @@ eq('清商二弦散音=1(bE)', P.semitoneToJianpu(P.sanSemitone(2)).text, '1');
 P.setTuning('zheng');    // 还原
 eq('还原正调三弦=1(F)', P.semitoneToJianpu(P.sanSemitone(3)).text, '1');
 
+// ── 弦徽音高模型 vs 国琴网权威正调定弦校验表（纯律精度，比音名）──
+// 证明编配引擎的散/按/泛音定位与传统定弦法一致（音高地道）。
+function pcEq(name, got, exp) {
+  var d = ((got - exp) % 12 + 12) % 12; if (d > 6) d -= 12;
+  var ok = Math.abs(d) < 0.15;              // 允许纯律与平均律音差(comma)
+  console.log((ok ? 'pass ' : 'FAIL ') + name);
+  if (!ok) fails++;
+}
+pcEq('定弦校验:七弦散==四弦九徽按(纯五)', P.anSemitone(4, 9), 14);
+pcEq('定弦校验:六弦散==四弦十徽按(纯四)', P.anSemitone(4, 10), 12);
+pcEq('定弦校验:五弦散==三弦十徽八分按', P.anSemitone(3, 10, 8), 9);
+pcEq('定弦校验:四弦散==二弦十徽按', P.anSemitone(2, 10), 7);
+pcEq('定弦校验:三弦散==一弦十徽按', P.anSemitone(1, 10), 5);
+pcEq('定弦校验:二弦七徽按==七弦音名', P.anSemitone(2, 7), 14);
+pcEq('定弦校验:七弦九徽按==五弦音名A', P.anSemitone(7, 9), 9);
+pcEq('定弦校验:一弦七徽泛==六弦', P.fanSemitone(1, 7), 12);
+pcEq('定弦校验:二弦七徽泛==七弦', P.fanSemitone(2, 7), 14);
+
 console.log(fails === 0 ? '\nALL PASS' : '\n' + fails + ' FAILED');
 process.exit(fails === 0 ? 0 : 1);
 
