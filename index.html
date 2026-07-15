@@ -214,10 +214,11 @@
     <div class="tool-group">
       <span class="tg-label">生成</span>
       <button class="primary" onclick="convertJianpu()">🎼 转换为减字谱</button>
-      <select onchange="setArrProfile(this.value)" title="编配画像：一谱多编">
+      <select id="selArrProfile" onchange="setArrProfile(this.value)" title="编配画像：一谱多编">
         <option value="yuan2" selected>编配：圆·走韵悠扬</option>
         <option value="hong">编配：宏·散音骨架</option>
         <option value="yuan3">编配：远·泛音清冷</option>
+        <option value="qinge">编配：琴歌·师承（梅庵闭环）</option>
       </select>
       <select onchange="setOrnDensity(this.value)" title="韵味装饰密度">
         <option value="0.6" selected>韵味：中</option>

@@ -148,7 +148,8 @@
       if (d === 0) {
         // 散音：句头顺手；句中偏贵（无韵），让位给可走音的按音
         // 散音连用衰减：连片散音平直无韵，连得越多下一个散音越贵→散按自然相间
-        var sc = (atStart ? 0.8 : 1.5) * pf.san + (ctx.sanRun || 0) * 0.75;
+        // sanRunK：琴歌画像调低连用衰减（梅庵书证：入我相思门＝连片散音是常态）
+        var sc = (atStart ? 0.8 : 1.5) * pf.san + (ctx.sanRun || 0) * 0.75 * (pf.sanRunK != null ? pf.sanRunK : 1);
         if (prevString && prevString !== s)
           sc += (0.5 + 0.2 * Math.abs(s - prevString)) * fastK; // 跨弦越远右手越吃力
         list.push({ type: 'san', string: s, score: sc });
@@ -159,6 +160,8 @@
         score += Math.abs(pos.hui - 9.5) * 0.3;        // 常用把位(7~10徽)
         if (pos.fen !== 0) score += 0.6;                // 整徽优先
         if (pos.hui < 5) score += 3;                    // 高把位难按
+        if (pos.hui > 11) score += (pos.hui - 11) * 0.7; // 十二徽以下过深（旋律音罕用，秋风词闭环书证）
+        if (pf.anchor && pos.hui >= 8.5 && pos.hui <= 10.5) score -= 0.25; // 琴歌把位锚：九/十徽带
         if (pos.waiwei) score += 1.5;
         if (prevString && prevString !== s)             // 人体力学：跨弦距离分级
           score += (0.5 + 0.2 * Math.abs(s - prevString)) * fastK;

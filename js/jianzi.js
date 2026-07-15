@@ -210,6 +210,12 @@
         if (cuo.ls) parts.push(text(28, 92 + yy, 14, NUM[cuo.ls]));
         parts.push(text(71, 76 + yy, 20, cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚'));
         parts.push(text(72, 92 + yy, 14, NUM[cuo.rs] || strGlyph));
+        // 混合臂撮：高音臂为按音时，右侧小字标注指+徽（如「大九」，秋风词书证）
+        if (cuo.rl && cuo.rhui) {
+          parts.push(text(94, 66 + yy, 10, cuo.rl, 'jz-orn'));
+          parts.push(text(94, 78 + yy, 10, NUM[cuo.rhui], 'jz-orn'));
+          if (cuo.rfen) parts.push(text(94, 89 + yy, 9, NUM[cuo.rfen], 'jz-orn'));
+        }
       }
     } else if (R === '打圆') {
       // 打圆＝囗内丁（GlyphWiki 部件，兜底字体拼装）
@@ -384,7 +390,9 @@
     }
     if (note.right === '撮' && note.cuo) {
       // 撮＝双弦齐鸣，两臂各记一弦（左勾低弦、右托/挑本弦）——完整报出两根弦
-      s += '撮（' + note.cuo.lt + NUM[note.cuo.ls] + '弦·' + note.cuo.rt + NUM[note.cuo.rs] + '弦）';
+      s += '撮（' + note.cuo.lt + NUM[note.cuo.ls] + '弦·' +
+        (note.cuo.rl ? note.cuo.rl + '指' + NUM[note.cuo.rhui] + '徽' + (note.cuo.rfen ? NUM[note.cuo.rfen] + '分' : '') : '') +
+        note.cuo.rt + NUM[note.cuo.rs] + '弦）';
     } else {
       s += (note.right || '挑') + NUM[note.string] + '弦';
     }

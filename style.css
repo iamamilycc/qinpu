@@ -281,6 +281,9 @@ footer::before { content: "❖"; display: block; color: var(--seal); opacity: .5
 .rep-dots { font-weight: 900; font-size: 1.1rem; align-self: center; }
 /* 简省弦号（连续同指法散音） */
 .jz-abbr { display: flex; align-items: center; min-height: 52px; padding: 0 6px; }
+/* 撞/退复折叠：被并入前字的音（一弹多音），谱面只留连音弧记号 */
+.jz-cover { display: flex; align-items: center; justify-content: center; min-height: 52px;
+  color: #b9a985; font-size: 15px; cursor: pointer; }
 .abbr-num { font-size: 1.45rem; font-weight: 600; font-family: "Songti SC", serif; }
 
 /* 调弦法下拉 */

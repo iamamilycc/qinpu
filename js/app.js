@@ -261,8 +261,9 @@
     var nNotes = toks.reduce(function (a, t) { return a + (t.kind === 'notes' ? t.group.length : 0); }, 0);
     if (nNotes === 0) { alert('没有解析到音符。示例：2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3'); return; }
     tokensB = toks; notesB = [];
+    window._notesB = notesB;   // 闭环比对/测试用：结构化读取引擎编配结果
     var prev = null, prevHui = null, failed = [], barJustSeen = true, sanRun = 0;
-    var prevSelSemi = null, prevSelType = null; // 重复同音散按相间用
+    var prevSelSemi = null, prevSelType = null, prevPrevSelType = null; // 重复同音散按相间用
     toks.forEach(function (t) {
       if (t.kind === 'br' || t.kind === 'tempo' || t.kind === 'volta' || t.kind === 'voltaEnd') return;
       if (t.kind === 'bar' || t.kind === 'time') { barJustSeen = true; return; }
@@ -286,17 +287,41 @@
           t.refs.push(-1);
           return;
         }
-        // 重复同音散按相间（关山月书证：重复音"1 1"第二音转按音，音色对比）——
-        // 上一音是散音且本音同高，且非快句 → 把最省手的按音候选提到首选
-        if (prevSelSemi !== null && Math.abs(semi - prevSelSemi) < 0.01 && prevSelType === 'san' &&
-            !(t.beam || t.six || t.triplet)) {
+        // 重复同音散按相间（关山月+秋风词双书证：梅庵三连重复音一律"散-按-散"，
+        // 中间换同度按音制造音色对比——111=挑六/中十勾四/挑六、222=挑七/名十勾五/挑七）
+        var sameAsPrev = prevSelSemi !== null && Math.abs(semi - prevSelSemi) < 0.01;
+        if (sameAsPrev && prevSelType === 'san' && !(t.beam || t.six || t.triplet)) {
+          // 第二音：散→按
           for (var ai = 1; ai < cands.length; ai++) {
             if (cands[ai].type === 'an') { cands.unshift(cands.splice(ai, 1)[0]); break; }
+          }
+        } else if (sameAsPrev && prevSelType === 'an' && prevPrevSelType === 'san' &&
+                   !(t.beam || t.six || t.triplet)) {
+          // 第三音：按→回散（散-按-散收拢）
+          for (var ai2 = 1; ai2 < cands.length; ai2++) {
+            if (cands[ai2].type === 'san') { cands.unshift(cands.splice(ai2, 1)[0]); break; }
+          }
+        }
+        // 快速回返音型 X-Y-X（梅庵书证 3532/6165/656/323）：首音取按音锚，
+        // 后续 Y、X 由走音链（撞/退复的实现载体）一弹带出，密处不疏。
+        if (gi === 0 && (t.beam || t.six) && t.group.length >= 3) {
+          var g0 = t.group[0], g1 = t.group[1], g2 = t.group[2];
+          var s0 = P.jianpuToSemitone(g0.deg, g0.sharp, g0.oct),
+              s1 = P.jianpuToSemitone(g1.deg, g1.sharp, g1.oct),
+              s22 = P.jianpuToSemitone(g2.deg, g2.sharp, g2.oct);
+          if (Math.abs(s0 - s22) < 0.01 && Math.abs(s1 - s0) > 0.01 && Math.abs(s1 - s0) <= 4) {
+            for (var ai3 = 1; ai3 < cands.length; ai3++) {
+              if (cands[ai3].type === 'an' && cands[ai3].hui >= 7 && cands[ai3].hui <= 11) {
+                cands.unshift(cands.splice(ai3, 1)[0]); break;
+              }
+            }
+            if (cands[0].type !== 'an') { /* 无合适按位则维持原选 */ }
           }
         }
         prev = cands[0].string;
         prevHui = (cands[0].type === 'an') ? cands[0].hui : prevHui;
         sanRun = (cands[0].type === 'san') ? sanRun + 1 : 0;
+        prevPrevSelType = prevSelType;
         prevSelSemi = semi; prevSelType = cands[0].type;
         t.refs.push(notesB.length);
         notesB.push({
@@ -368,7 +393,12 @@
     yuan2:{ name: '圆·走韵悠扬', san: 1.25, an: 0.85, fan: 1.05, walkMax: 3,
             pal: { low: ['勾', '抹', '托', '挑'], high: ['挑', '抹', '勾', '打'] } },   // 流畅
     yuan3:{ name: '远·泛音清冷', san: 1.1,  an: 1.05, fan: 0.5,  walkMax: 2,
-            pal: { low: ['挑', '勾', '摘', '抹'], high: ['挑', '摘', '抹', '打'] } }    // 轻灵
+            pal: { low: ['挑', '勾', '摘', '抹'], high: ['挑', '摘', '抹', '打'] } },   // 轻灵
+    // 琴歌·师承：秋风词（梅庵1931）逐音闭环提炼——散音优先（音在散弦即用散弦）、
+    // 把位锚定九/十徽、不自动泛音、右手挑勾为主；快速音型仍由按音锚+走音链承担。
+    qinge:{ name: '琴歌·师承', san: 0.55, an: 1.15, fan: 3.0, walkMax: 3,
+            sanRunK: 0.2, anchor: true,
+            pal: { low: ['勾', '挑', '勾', '挑'], high: ['挑', '勾', '挑', '勾'] } }
   };
   var curArrProfile = 'yuan2';   // 默认：圆
   var curOrnDensity = 0.6;       // 韵味装饰密度 0.3淡/0.6中/0.9浓
@@ -386,8 +416,9 @@
   function candToNote(c, right, orn) {
     right = right || (c.string <= 3 ? '勾' : '挑');
     if (c.type === 'san') return { type: 'san', string: c.string, right: right, orn: orn || [] };
-    // 左手选指惯例：九徽及以下把位用名指，七八徽高把位用大指；泛音习惯标中指
-    var left = (c.type === 'fan') ? '中' : (c.hui >= 9) ? '名' : '大';
+    // 左手选指惯例（秋风词梅庵谱闭环书证）：十徽及以下＝四弦中指、余弦名指；
+    // 九徽及更高把位（含八徽半/七六）＝大指。泛音习惯标中指。
+    var left = (c.type === 'fan') ? '中' : (c.hui >= 10) ? (c.string === 4 ? '中' : '名') : '大';
     return { type: c.type, string: c.string, hui: c.hui, fen: c.fen, waiwei: c.waiwei, left: left, right: right, orn: orn || [] };
   }
 
@@ -438,7 +469,9 @@
       it.walkAvail = null; it.walk = null;
       if (it.trip === undefined && !it.long && !it.final &&
           (prevType === 'an' || prevType === 'walk') && walkChain < (ARR_PROFILES[curArrProfile].walkMax || 3) &&
-          prevSemi !== null && Math.abs(target - prevSemi) <= 4 && Math.abs(target - prevSemi) > 0.01) {
+          // 下限 0.5：徽分平均律近似与简谱目标有 ~0.02 半音 comma，0.01 阈值会把
+          // 同位重复音误判成「上至原徽位」的零距离假走音（秋风词闭环抓出的老bug）
+          prevSemi !== null && Math.abs(target - prevSemi) <= 4 && Math.abs(target - prevSemi) > 0.5) {
         var wpos = P.findPosition(prevString, target);
         if (wpos && !wpos.waiwei && wpos.hui >= 5) {
           it.walkAvail = { dir: target > prevSemi ? '上' : '下', string: prevString, hui: wpos.hui, fen: wpos.fen };
@@ -459,19 +492,34 @@
       //   末音/长音优先撮；八度音不落散弦（如正调 F 末音）→ cuoInfo=null，不拦截，
       //   让本音落回常规指法逻辑（重复音交替／调色板轮转），既不出残缺撮、也不单调。
       var cuoInfo = null;
-      if (it.final || it.long) {
-        var cuoS2 = semi - 12 >= 0 ? semi - 12 : semi + 12;
+      if ((it.final || it.long) && c.type === 'san') {
+        // 撮＝双弦齐鸣，低弦一律中指勾；高弦指法看两弦距离：
+        //   临近弦（相隔≤3）＝食指挑（小撮）；远距弦（相隔≥4，如一六弦八度）＝大指托（大撮）。
+        // 臂序偏好（秋风词梅庵闭环书证：秋/月/明三处撮全取高八度臂）：
+        //   ① 高八度散弦臂 → ② 高八度按音臂（大指，整徽优先，6.5~10徽把位）→ ③ 低八度散弦臂。
+        var upS = -1, dnS = -1;
         for (var cuoI = 0; cuoI < 7; cuoI++) {
-          if (Math.abs(P.OPEN[cuoI] - cuoS2) < 0.01 && c.type === 'san') {
-            // 撮＝双弦齐鸣，低弦一律中指勾；高弦指法看两弦距离：
-            //   临近弦（相隔≤3，如一三/二四弦）＝食指挑（小撮）；
-            //   远距弦（相隔≥4，如一六弦八度）＝大指托（大撮）——大指才够得着。
-            //   （按弦高低定指法，与旋律音是哪根无关。）
-            var partner = cuoI + 1;
-            var loStr = Math.min(c.string, partner), hiStr = Math.max(c.string, partner);
-            var hiRt = (hiStr - loStr) >= 4 ? '托' : '挑';
-            cuoInfo = { lt: '勾', ls: loStr, rt: hiRt, rs: hiStr };
-            break;
+          if (Math.abs(P.OPEN[cuoI] - (semi + 12)) < 0.01 && upS < 0) upS = cuoI + 1;
+          if (semi - 12 >= 0 && Math.abs(P.OPEN[cuoI] - (semi - 12)) < 0.01 && dnS < 0) dnS = cuoI + 1;
+        }
+        if (upS > 0) {
+          cuoInfo = { lt: '勾', ls: c.string, rt: (upS - c.string >= 4 ? '托' : '挑'), rs: upS };
+        } else {
+          var best = null;
+          for (var ms = c.string + 1; ms <= 7; ms++) {
+            var mp = P.findPosition(ms, semi + 12);
+            if (!mp || mp.waiwei || mp.hui < 6.5 || mp.hui > 10) continue;
+            if (!best || (mp.fen === 0 && best.fen !== 0) ||
+                (mp.fen === best.fen && Math.abs(mp.hui - 9) < Math.abs(best.hui - 9))) {
+              best = { s: ms, hui: mp.hui, fen: mp.fen };
+            }
+          }
+          if (best) {
+            cuoInfo = { lt: '勾', ls: c.string, rt: (best.s - c.string >= 4 ? '托' : '挑'),
+                        rs: best.s, rl: '大', rhui: best.hui, rfen: best.fen };
+          } else if (dnS > 0) {
+            var loStr = Math.min(c.string, dnS), hiStr = Math.max(c.string, dnS);
+            cuoInfo = { lt: '勾', ls: loStr, rt: (hiStr - loStr >= 4 ? '托' : '挑'), rs: hiStr };
           }
         }
       }
@@ -513,6 +561,21 @@
       prevType = c.type; prevString = c.string;
       prevSemi = semi;
     });
+    // ── 快速回返音型折叠为撞/退复（秋风词梅庵书证）──
+    // 按音锚 + 上走 + 下走回原位（同弦、快句）＝谱面记「撞」；下走+上走回＝「退复」。
+    // 只改谱面记法（隐藏两个走音小字、锚字加撞/退复），试听仍走既有走音滑奏时间轴。
+    for (var zi = 0; zi + 2 < notesB.length; zi++) {
+      var za = notesB[zi], zw1 = notesB[zi + 1], zw2 = notesB[zi + 2];
+      if (!za.beam || za.custom || za.walk || !zw1.walk || !zw2.walk) continue;
+      if (!zw1.beam || !zw2.beam) continue;
+      var zc = za.cands[za.pick];
+      if (zc.type !== 'an') continue;
+      if (zw1.walk.dir === zw2.walk.dir) continue;
+      if (zw2.walk.string !== zc.string ||
+          zw2.walk.hui !== zc.hui || (zw2.walk.fen || 0) !== (zc.fen || 0)) continue;
+      za.orn = (za.orn || []).concat(zw1.walk.dir === '上' ? '撞' : '退复');
+      zw1.hideWalk = true; zw2.hideWalk = true;
+    }
     // 连续泛音段：首标「泛起」尾标「泛止」（单个泛音只标「泛」）
     var runStart = -1;
     for (var i = 0; i <= notesB.length; i++) {
@@ -828,6 +891,13 @@
               stn.push({ semi: P.noteSemitone(note), dotted: t.dotted && lastInGroup });
             }
             jpRow += jpNoteHtml(n, t.dotted && lastInGroup, jpPre(it), !it.walk && c.type === 'fan');
+            if (it.walk && it.hideWalk) {
+              // 撞/退复折叠：此音已并入前一个减字（一弹多音），谱面只留连音标示
+              jzRow += '<span class="jz-cell jz-cover" onclick="showCands(' + ref + ',event)" ' +
+                'title="并入前字（撞/退复一弹带出，点击可改弹法）">⌒</span>';
+              prevPk = null;
+              return;
+            }
             var tip = J.label(note) + (it.custom ? '（自定义弹法，点击可改）' : '（点击查看全部弹法）');
             // 谱书简省：连续同指法的散音（无走音无装饰）→ 只写弦号
             var plainSan = !it.walk && note.type === 'san' && (!note.orn || !note.orn.length) && !note.fanMark;
@@ -1522,12 +1592,16 @@
   // 八度已逐音核对原谱简谱（下加点低音区在"相亲相见/难为情/早知如此"数句），节奏近似待校
   window.loadDemo4 = function () {
     if ($('selTuning')) { $('selTuning').value = 'manjiao'; $('selTuning').dispatchEvent(new Event('change')); }
-    if ($('titleB')) $('titleB').value = '秋风词 · 慢角调1=C（梅庵琴谱1931·王吉儒演奏谱/许健记谱·八度已核·节奏待校）';
+    if ($('titleB')) $('titleB').value = '秋风词 · 慢角调1=C（梅庵琴谱1931·王吉儒演奏谱/许健记谱·逐音闭环已核·节奏待校）';
+    // 2026-07-16 逐音闭环勘误（对照国琴网梅庵谱图 pu/848）：开头 5 5̣ 5；秋/月/明=八度撮长音；
+    // 知何日三音全低；亲=中音1·2；相见 6̣1 6̣5̣（1为中音）；如此=中音2·1。编配画像切「琴歌·师承」。
+    if ($('selArrProfile')) $('selArrProfile').value = 'qinge';
+    setArrProfile('qinge');
     $('inJianpu').value =
-      "3/4 T=90 5 5 5 | {1'}1 6 | {5}5 1 | 235 2 2 | 5. 1' 3532 / " +
-      "1 1 1 | 6,5,6, 1,. 2, 6,1,6,5, | 5 5 5, | 323 5 6 1' 3532 / " +
-      "1 1 1 | 6,5, 1 1 1 6, 1 | 2 2 2 | 535 6 1' 5653 / " +
-      "2 2 2 | 323 5 1' 3532 | 1 1 1 | 5,. 6, 2,. 1, | 2 2 2 / " +
+      "3/4 T=90 5 5, 5 | 1 - 6, | 5, - 1 | 235 2 2 2 | 5. 1' 3532 | / " +
+      "1 1 1 | 6,5,6, 1. 2 6,16,5, | 5, 5, 5, | 323 5 6 1' 3532 | / " +
+      "1 1 1 | 6,5, 1 1 1 6, 1 | 2 2 2 | 535 6 1' 5653 | / " +
+      "2 2 2 | 323 5. 1' 3532 | 1 1 1 | 5,. 6, 2. 1 | 2 2 2 | / " +
       "1 2 5. 1' 3532 | 1 1 1 | 1 2 5. 1' 3532 | 1 1 1 ||";
     convertJianpu();
   };

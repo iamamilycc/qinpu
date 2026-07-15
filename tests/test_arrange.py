@@ -104,10 +104,71 @@ with sync_playwright() as p:
     # 大撮＝勾低弦(一弦)+托高弦(六弦)，两臂弦数须齐；曾 bug：左臂缺弦数 + 指法用挑
     chk("撮" in cuolab and "勾一弦" in cuolab and "托六弦" in cuolab,
         "大撮=勾低弦+托高弦，两臂弦数齐（勾一弦·托六弦）：" + cuolab)
-    # 正调 F 末音：八度音 f 不在任何散弦→不得出残缺撮，退回单音指法
+    # 正调 F 末音：高八度 f 不在散弦 → 混合臂撮（散弦臂+大指按音臂，带指+徽标注）
+    # ——秋风词梅庵闭环书证（明=散四+九徽六、月=散五+大九七、秋=散六+大七六七），
+    #   2026-07-16 起按音臂为合法臂，不再退回单音；臂上必须带「大指X徽」注明位置。
     pg.fill("#inJianpu", "2/4 5 6 | 1 -"); pg.click("text=转换为减字谱"); pg.wait_for_timeout(500)
     flab = labels(pg)[-1]
-    chk("撮" not in flab, "八度音非散弦时退回单音（不出残缺撮）：" + flab)
+    chk("撮" in flab and "勾三弦" in flab and "大指" in flab and "徽" in flab,
+        "八度音非散弦时=混合臂撮（散臂+大指按音臂带徽位）：" + flab)
+
+    # ═══ 秋风词逐音闭环（梅庵1931 大师减字 vs 引擎，docs/闭环对照-秋风词.md）═══
+    print("— 秋风词闭环（琴歌·师承画像）—")
+    pg.evaluate("loadDemo4()"); pg.wait_for_timeout(600)
+    chk(pg.eval_on_selector("#selArrProfile", "e => e.value") == "qinge",
+        "秋风词自动切「琴歌·师承」画像")
+    nb = pg.evaluate("""() => window._notesB.map(it => {
+      const c = it.cands[it.pick];
+      return { t: c.type, s: c.string, h: c.hui||0, f: c.fen||0, r: it.right,
+               orn: (it.orn||[]).join('/'), w: it.walk? it.walk.dir : null,
+               hide: !!it.hideWalk, cuo: it.cuo||null };
+    })""")
+    # 开头「秋风清」＝大九挑六／散勾四／大九六（按-散⁸ᵛᵇ-按，大师逐字吻合）
+    chk(nb[0]["t"] == "an" and nb[0]["s"] == 6 and nb[0]["h"] == 9 and
+        nb[1]["t"] == "san" and nb[1]["s"] == 4 and
+        nb[2]["t"] == "an" and nb[2]["s"] == 6 and nb[2]["h"] == 9,
+        "秋风清＝大九六/散四/大九六（对齐大师）")
+    # 「秋」长音＝混合臂撮：散勾六＋大指七徽六分挑七（大师原字）
+    c3 = nb[3]["cuo"]
+    chk(c3 and c3["ls"] == 6 and c3["rs"] == 7 and c3.get("rl") == "大" and
+        c3["rhui"] == 7 and c3.get("rfen") == 6,
+        "秋＝撮[散六+大七六挑七]（大师原字）")
+    # 「明」长音＝撮：散勾四＋大指九徽六弦（大师原字）
+    c5 = nb[5]["cuo"]
+    chk(c5 and c5["ls"] == 4 and c5["rs"] == 6 and c5.get("rhui") == 9,
+        "明＝撮[散四+大九·六弦]（大师原字）")
+    # 三连重复音＝散-按-散（栖复惊 111：挑六/中十勾四/挑六——大师全曲 7 组无一例外）
+    chk(nb[19]["t"] == "san" and nb[19]["s"] == 6 and
+        nb[20]["t"] == "an" and nb[20]["s"] == 4 and nb[20]["h"] == 10 and
+        nb[21]["t"] == "san" and nb[21]["s"] == 6,
+        "栖复惊111＝散六/按四十徽/散六（散按散）")
+    # 快速回返音型折叠：3532→撞、656/323→退复（谱面并字，一弹多音）
+    n_zhuang = sum(1 for x in nb if "撞" in x["orn"])
+    n_tuifu = sum(1 for x in nb if "退复" in x["orn"])
+    n_hide = sum(1 for x in nb if x["hide"])
+    chk(n_zhuang >= 3, "3532 型音组折叠为「撞」（实得 %d 处）" % n_zhuang)
+    chk(n_tuifu >= 2, "656/323 型音组折叠为「退复」（实得 %d 处）" % n_tuifu)
+    chk(n_hide == 2 * (n_zhuang + n_tuifu),
+        "每处撞/退复恰隐藏两个走音小字（%d=2×%d）" % (n_hide, n_zhuang + n_tuifu))
+    # 散音占比（大师约四成散音；旧引擎全曲仅 3 个散音=bug 级偏差）
+    n_san = sum(1 for x in nb if x["t"] == "san" and not x["w"])
+    chk(n_san >= 25, "散音占比恢复琴歌口径（散音 %d 个 ≥25）" % n_san)
+    # 零距离假走音回归（徽分平均律 comma 曾致「上至原徽位」）：
+    # 所有走音的落点须与前一音位置不同
+    zero_walks = pg.evaluate("""() => {
+      const nbb = window._notesB; let bad = 0;
+      for (let i = 1; i < nbb.length; i++) {
+        const w = nbb[i].walk; if (!w) continue;
+        const p = nbb[i-1];
+        if (p.walk) { if (p.walk.string === w.string && p.walk.hui === w.hui &&
+                          (p.walk.fen||0) === (w.fen||0)) bad++; }
+        else { const pc = p.cands[p.pick];
+               if (pc.type === 'an' && pc.string === w.string && pc.hui === w.hui &&
+                   (pc.fen||0) === (w.fen||0)) bad++; }
+      }
+      return bad;
+    }""")
+    chk(zero_walks == 0, "无零距离假走音（回归）")
 
     chk(len(errs) == 0, "全程无 JS 错误" + ("" if not errs else "：" + "; ".join(errs[:2])))
     b.close()
