@@ -259,6 +259,7 @@
     if (nNotes === 0) { alert('没有解析到音符。示例：2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3'); return; }
     tokensB = toks; notesB = [];
     var prev = null, prevHui = null, failed = [], barJustSeen = true, sanRun = 0;
+    var prevSelSemi = null, prevSelType = null; // 重复同音散按相间用
     toks.forEach(function (t) {
       if (t.kind === 'br' || t.kind === 'tempo' || t.kind === 'volta' || t.kind === 'voltaEnd') return;
       if (t.kind === 'bar' || t.kind === 'time') { barJustSeen = true; return; }
@@ -281,9 +282,18 @@
           t.refs.push(-1);
           return;
         }
+        // 重复同音散按相间（关山月书证：重复音"1 1"第二音转按音，音色对比）——
+        // 上一音是散音且本音同高，且非快句 → 把最省手的按音候选提到首选
+        if (prevSelSemi !== null && Math.abs(semi - prevSelSemi) < 0.01 && prevSelType === 'san' &&
+            !(t.beam || t.six || t.triplet)) {
+          for (var ai = 1; ai < cands.length; ai++) {
+            if (cands[ai].type === 'an') { cands.unshift(cands.splice(ai, 1)[0]); break; }
+          }
+        }
         prev = cands[0].string;
         prevHui = (cands[0].type === 'an') ? cands[0].hui : prevHui;
         sanRun = (cands[0].type === 'san') ? sanRun + 1 : 0;
+        prevSelSemi = semi; prevSelType = cands[0].type;
         t.refs.push(notesB.length);
         notesB.push({
           cands: cands, pick: 0, src: n,
