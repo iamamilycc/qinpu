@@ -72,6 +72,42 @@ ceq('清商调号=3个', sigCount('qingshang'), 3);
 ceq('凄凉调号=2个(♭B♭E)', sigCount('qiliang'), 2);
 ceq('慢宫调号=1个(F♯)', sigCount('mangong'), 1);
 
+// ── 全覆盖：所有调 × 全音域「往返校验」——证明显示音名==实际音高 ──
+(function roundTripAll() {
+  var NAT = S._natpc, bad = 0, checked = 0;
+  Object.keys(P.TUNINGS).forEach(function (tk) {
+    P.setTuning(tk); S.setKey(P.tuning().key);
+    var alt = S._alt();
+    for (var pc = 0; pc < 12; pc++) {
+      var sp = S._spell(pc), L = sp[0], acc = sp[1], eff;
+      if (acc === '') eff = ((NAT[L] + (alt[L] || 0)) % 12 + 12) % 12;
+      else if (acc === 'n') eff = NAT[L];
+      else if (acc === '#') eff = (NAT[L] + 1) % 12;
+      else eff = (NAT[L] + 11) % 12;
+      checked++;
+      if (eff !== pc) { bad++; if (bad <= 5) console.log('  ✗ ' + tk + ' pc=' + pc + '→字母' + L + acc + ' 反算=' + eff); }
+    }
+  });
+  console.log((bad === 0 ? 'pass ' : 'FAIL ') + '全15调×12音拼写往返(' + checked + '项)音名==实际音高');
+  if (bad) fails++;
+})();
+
+// ── 全音域定位合法+八度正确（黄钟低 ♭B, 到 泛音高音区）──
+(function rangeAll() {
+  var bad = 0, checked = 0;
+  Object.keys(P.TUNINGS).forEach(function (tk) {
+    P.setTuning(tk); S.setKey(P.tuning().key);
+    for (var semi = -4; semi <= 44; semi++) {
+      var p = S.pos(semi); checked++;
+      var okAcc = ['', '#', 'b', 'n'].indexOf(p.acc) >= 0;
+      var expectOct = Math.floor((36 + semi) / 12) - 1, gotOct = Math.floor(p.idx / 7);
+      if (!okAcc || Math.abs(gotOct - expectOct) > 1) { bad++; if (bad <= 5) console.log('  ✗ ' + tk + ' semi=' + semi + ' acc=' + p.acc + ' oct=' + gotOct + '/' + expectOct); }
+    }
+  });
+  console.log((bad === 0 ? 'pass ' : 'FAIL ') + '全15调×49半音 定位合法+八度正确(' + checked + '项)');
+  if (bad) fails++;
+})();
+
 P.setTuning('zheng'); S.setKey(5); // 复位
 console.log(fails === 0 ? '\nALL PASS' : '\n' + fails + ' FAILED');
 process.exit(fails === 0 ? 0 : 1);

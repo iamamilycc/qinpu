@@ -214,7 +214,8 @@
       (rest ? '<text x="13" y="50" class="st-rest">' + restGlyph(unit) + '</text>' : '') + '</svg>';
   }
 
-  var API = { cell: cell, clefCell: clefCell, timeCell: timeCell, barCell: barCell, padCell: padCell, pos: pos, setKey: setKey };
+  var API = { cell: cell, clefCell: clefCell, timeCell: timeCell, barCell: barCell, padCell: padCell, pos: pos, setKey: setKey,
+    _spell: spellPc, _alt: function () { return LETTER_ALT; }, _natpc: NAT_PC };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else global.QinStaff = API;
 })(typeof window !== 'undefined' ? window : this);
