@@ -1585,7 +1585,7 @@
     }, true);
     $('selTuning').addEventListener('change', function () {
       P.setTuning(this.value);
-      S.setKey(P.tuning().flats);
+      S.setKey(P.tuning().key);
       updatePreview();
       renderScoreA();
       if (tokensB.length) convertJianpu(); // 重新编配（定弦变了，弹法全变）

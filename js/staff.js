@@ -14,24 +14,55 @@
   var VB_Y = -16, VB_H = 100;       // viewBox 纵向范围
   var G2_IDX = 2 * 7 + 4;           // 底线 G2 的音级序号 (oct*7+letter)
 
-  // 调号（降号 pc 列表，随调弦法由 setKey 更新；默认 F 大调 = [Bb]）
-  var KEY_FLATS = [10];
-  function setKey(flats) { KEY_FLATS = flats || []; }
-  function inKey(pc) { return KEY_FLATS.indexOf(pc) >= 0; }
-
-  var NAT = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };  // 自然音 pc→字母
-  var FLAT = { 1: 1, 3: 2, 6: 4, 8: 5, 10: 6 };              // 降号拼写 pc→字母
+  // ── 调号系统（升降号都支持，从主音 pc 按五度圈推导）──
+  // 字母序号：C=0 D=1 E=2 F=3 G=4 A=5 B=6
+  var NAT_PC = [0, 2, 4, 5, 7, 9, 11];                 // 字母 → 自然音 pc
   var ACC_GLYPH = { '#': '♯', 'b': '♭', 'n': '♮' };
+  // 主音 pc → { letter:主音字母, sig:[[字母,±1],…] 调号 }（古琴用 C F ♭B ♭E G D，通用亦备）
+  var KEYSIG = {
+    0:  { sig: [] },                                                   // C
+    7:  { sig: [[3, 1]] },                                             // G:  F♯
+    2:  { sig: [[3, 1], [0, 1]] },                                     // D:  F♯ C♯
+    9:  { sig: [[3, 1], [0, 1], [4, 1]] },                             // A
+    4:  { sig: [[3, 1], [0, 1], [4, 1], [1, 1]] },                     // E
+    11: { sig: [[3, 1], [0, 1], [4, 1], [1, 1], [5, 1]] },             // B
+    6:  { sig: [[3, 1], [0, 1], [4, 1], [1, 1], [5, 1], [2, 1]] },     // F♯
+    5:  { sig: [[6, -1]] },                                            // F:  ♭B
+    10: { sig: [[6, -1], [2, -1]] },                                   // ♭B: ♭B ♭E
+    3:  { sig: [[6, -1], [2, -1], [5, -1]] },                          // ♭E: ♭B ♭E ♭A
+    8:  { sig: [[6, -1], [2, -1], [5, -1], [1, -1]] },                 // ♭A
+    1:  { sig: [[6, -1], [2, -1], [5, -1], [1, -1], [4, -1]] }         // ♭D
+  };
+  var SIG = [], LETTER_ALT = {}, SHARP_KEY = false;
 
-  // pc → [字母序号, 变音记号]（按降号体系拼写，调号内不标）
+  function setKey(tonicPc) {
+    if (Array.isArray(tonicPc)) tonicPc = tonicPc.length ? 5 : 0; // 向后兼容旧的 flats 数组
+    tonicPc = ((Math.round(tonicPc) % 12) + 12) % 12;
+    SIG = (KEYSIG[tonicPc] || KEYSIG[0]).sig;
+    LETTER_ALT = {};
+    SIG.forEach(function (e) { LETTER_ALT[e[0]] = e[1]; });
+    SHARP_KEY = SIG.length > 0 && SIG[0][1] > 0;
+  }
+  setKey(5); // 默认正调 F
+
+  // pc → [字母序号, 变音记号]：调号内不标记，非调内音按升/降调习惯拼写
   function spellPc(pc) {
-    if (inKey(pc)) return [FLAT[pc], ''];
-    if (NAT[pc] !== undefined) {
-      // 自然音，但其降半音在调号内（如 Bb 调里的 E）→ 需还原记号
-      if (inKey((pc + 11) % 12)) return [NAT[pc], 'n'];
-      return [NAT[pc], ''];
+    pc = ((pc % 12) + 12) % 12;
+    // 1) 调内音（字母的调号变化后正好等于 pc）→ 不标记
+    for (var L = 0; L < 7; L++) {
+      if (((NAT_PC[L] + (LETTER_ALT[L] || 0)) % 12 + 12) % 12 === pc) return [L, ''];
     }
-    return [FLAT[pc], 'b'];
+    // 2) 某自然字母被调号改动、此处却弹本位 → 还原记号
+    for (var L2 = 0; L2 < 7; L2++) {
+      if (NAT_PC[L2] === pc && LETTER_ALT[L2]) return [L2, 'n'];
+    }
+    // 3) 变化音：升调用升号（下方字母 +♯），降调用降号（上方字母 +♭）
+    if (SHARP_KEY) {
+      for (var L3 = 0; L3 < 7; L3++) if (NAT_PC[L3] === (pc + 11) % 12) return [L3, '#'];
+    } else {
+      for (var L4 = 0; L4 < 7; L4++) if (NAT_PC[L4] === (pc + 1) % 12) return [L4, 'b'];
+    }
+    return [0, '']; // 理论不达
   }
 
   function yOf(idx) { return BOT - (idx - G2_IDX) * HALF; }
@@ -122,14 +153,17 @@
     return s + '</svg>';
   }
 
-  /* 谱号+调号格（乐谱开头）：低音谱号 𝄢 + 当前调的降号 */
-  var FLAT_POS = { 10: 20, 3: 23, 8: 19, 1: 22 }; // pc → 低音谱表音级序号
+  /* 谱号+调号格（乐谱开头）：低音谱号 𝄢 + 当前调的升/降号 */
+  // 低音谱表上各变音记号的音级序号（idx=oct*7+letter）：
+  var SHARP_POS = { 3: 24, 0: 21, 4: 25, 1: 22, 5: 26, 2: 23 }; // F♯ C♯ G♯ D♯ A♯ E♯
+  var FLAT_POS_L = { 6: 20, 2: 23, 5: 19, 1: 22, 4: 25, 0: 21 }; // ♭B ♭E ♭A ♭D ♭G ♭C
   function clefCell() {
-    var w = 36 + KEY_FLATS.length * 9 + (KEY_FLATS.length ? 2 : 0);
+    var w = 36 + SIG.length * 9 + (SIG.length ? 2 : 0);
     var s = svgOpen(w) + lines(w) + '<text x="14" y="52" class="st-clef">𝄢</text>';
-    KEY_FLATS.forEach(function (pc, i) {
-      var idx = FLAT_POS[pc];
-      if (idx !== undefined) s += '<text x="' + (33 + i * 9) + '" y="' + (yOf(idx) + 3) + '" class="st-acc">♭</text>';
+    SIG.forEach(function (e, i) {
+      var letter = e[0], sharp = e[1] > 0;
+      var idx = sharp ? SHARP_POS[letter] : FLAT_POS_L[letter];
+      if (idx !== undefined) s += '<text x="' + (33 + i * 9) + '" y="' + (yOf(idx) + 3) + '" class="st-acc">' + (sharp ? '♯' : '♭') + '</text>';
     });
     return s + '</svg>';
   }
