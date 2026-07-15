@@ -108,10 +108,13 @@
       '" width="' + w + '" height="' + VB_H + '">';
   }
 
-  /* 音符格。notes=[{semi, dotted}], opts={beam:bool, width} */
+  /* 音符格。notes=[{semi, dotted}], opts={beam, width, hold} hold=持续拍数(≥2空心二分,≥4全音符) */
   function cell(notes, opts) {
     opts = opts || {};
     var n = notes.length;
+    var hold = opts.hold || 1;
+    var hollow = n === 1 && hold >= 2;      // 二分音符及以上：空心符头
+    var whole = n === 1 && hold >= 4;       // 全音符：空心无桿
     var w = opts.width || Math.max(34, n * 26);
     var s = svgOpen(w) + lines(w);
     var stemTops = [], xs = [];
@@ -121,8 +124,9 @@
       xs.push(x);
       s += ledgers(p.idx, x);
       if (p.acc) s += '<text x="' + (x - 10) + '" y="' + (p.y + 3) + '" class="st-acc">' + ACC_GLYPH[p.acc] + '</text>';
-      s += head(x, p.y, !!nt.half);
+      s += head(x, p.y, !!nt.half || hollow);
       if (nt.dotted) s += '<circle cx="' + (x + 8) + '" cy="' + (p.y - 2) + '" r="1.7" class="st-dot"/>';
+      if (whole) return; // 全音符无符桿
       // 符桿：组内一律向上（便于连符杠）；单音低于中线向上，否则向下
       var up = opts.beam ? true : (p.idx <= G2_IDX + 4);
       if (up) {
@@ -190,11 +194,17 @@
     return s + '</svg>';
   }
 
-  /* 空格（延音/休止占位）：只画谱线；rest=true 加四分休止符 */
-  function padCell(rest) {
+  /* 空格（延音/休止占位）：只画谱线；rest=true 加休止符（按 unit 区分时值）*/
+  // 时值 → 休止符字形：四分𝄽 八分𝄾 十六分𝄿（半/全较少见，多拍休止仍用四分+延音格）
+  function restGlyph(unit) {
+    if (unit === 0.25) return '𝄿';
+    if (unit === 0.5) return '𝄾';
+    return '𝄽';
+  }
+  function padCell(rest, unit) {
     var w = 26;
     return svgOpen(w) + lines(w) +
-      (rest ? '<text x="13" y="50" class="st-rest">𝄽</text>' : '') + '</svg>';
+      (rest ? '<text x="13" y="50" class="st-rest">' + restGlyph(unit) + '</text>' : '') + '</svg>';
   }
 
   var API = { cell: cell, clefCell: clefCell, timeCell: timeCell, barCell: barCell, padCell: padCell, pos: pos, setKey: setKey };

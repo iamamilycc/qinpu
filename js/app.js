@@ -742,7 +742,7 @@
     lines.forEach(function (line) {
       prevPk = null; // 行首恢复全字
       html += '<div class="duipu">' + colHtml('', S.clefCell(), ''); // 每行行首谱号
-      line.forEach(function (pair) {
+      line.forEach(function (pair, _qi) {
         var t = pair[0], ti = pair[1];
         if (t.kind === 'bar') {
           var jpBar = (t.rep === 'L' ? '<span class="rep-dots">:</span>' : '') +
@@ -762,7 +762,7 @@
         if (t.kind === 'voltaEnd') { return; }
         if (t.kind === 'rest') {
           var rCls = t.unit === 0.25 ? 'beam beam16' : t.unit === 0.5 ? 'beam' : '';
-          html += colHtml('<span class="jp-num">0' + (t.dotted ? '·' : '') + '</span>', S.padCell(true), '', rCls); return;
+          html += colHtml('<span class="jp-num">0' + (t.dotted ? '·' : '') + '</span>', S.padCell(true, t.unit), '', rCls); return;
         }
         // notes 组
         var jpRow = '', jzRow = '', stn = [];
@@ -818,8 +818,13 @@
         var jpCls = (t.beam || t.eighth || t.six) ? 'beam' : '';
         if (t.six) jpCls += ' beam16';
         if (t.triplet) jpCls += ' has-trip';
+        // 长音：单音后紧跟的延音线（–）计入持续拍数 → 五线谱画空心二分/全音符
+        var hold = 1;
+        if (stn.length === 1 && !t.beam && !t.eighth && !t.six && !t.triplet) {
+          for (var dqi = _qi + 1; dqi < line.length && line[dqi][0].kind === 'dash'; dqi++) hold++;
+        }
         html += '<div class="dp-col" data-col="' + ti + '"><div class="dp-jp' + (jpCls ? ' ' + jpCls : '') + '">' + jpRow + '</div>' +
-          '<div class="dp-staff">' + (stn.length ? S.cell(stn, { beam: t.beam, eighth: t.eighth, six: t.six }) : S.padCell(false)) + '</div>' +
+          '<div class="dp-staff">' + (stn.length ? S.cell(stn, { beam: t.beam, eighth: t.eighth, six: t.six, hold: hold }) : S.padCell(false)) + '</div>' +
           '<div class="dp-jz">' + jzRow + '</div></div>';
       });
       html += '</div>';
