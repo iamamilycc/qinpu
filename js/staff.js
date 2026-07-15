@@ -98,8 +98,9 @@
     return '<line x1="' + (x - 8) + '" y1="' + yOf(idx) + '" x2="' + (x + 8) + '" y2="' + yOf(idx) + '" class="st-line"/>';
   }
 
-  function head(x, y, hollow) {
-    return '<ellipse cx="' + x + '" cy="' + y + '" rx="4.6" ry="3.4" transform="rotate(-18 ' + x + ' ' + y + ')"' +
+  function head(x, y, hollow, wide) {
+    var rx = wide ? 5.6 : 4.6;                 // 全音符符头略宽
+    return '<ellipse cx="' + x + '" cy="' + y + '" rx="' + rx + '" ry="3.4" transform="rotate(-18 ' + x + ' ' + y + ')"' +
       (hollow ? ' class="st-head-hollow"' : ' class="st-head"') + '/>';
   }
 
@@ -115,6 +116,7 @@
     var hold = opts.hold || 1;
     var hollow = n === 1 && hold >= 2;      // 二分音符及以上：空心符头
     var whole = n === 1 && hold >= 4;       // 全音符：空心无桿
+    var holdDot = n === 1 && (hold === 3 || hold === 6); // 附点二分/附点全音符
     var w = opts.width || Math.max(34, n * 26);
     var s = svgOpen(w) + lines(w);
     var stemTops = [], xs = [];
@@ -124,8 +126,8 @@
       xs.push(x);
       s += ledgers(p.idx, x);
       if (p.acc) s += '<text x="' + (x - 10) + '" y="' + (p.y + 3) + '" class="st-acc">' + ACC_GLYPH[p.acc] + '</text>';
-      s += head(x, p.y, !!nt.half || hollow);
-      if (nt.dotted) s += '<circle cx="' + (x + 8) + '" cy="' + (p.y - 2) + '" r="1.7" class="st-dot"/>';
+      s += head(x, p.y, !!nt.half || hollow, whole);
+      if (nt.dotted || holdDot) s += '<circle cx="' + (x + (whole ? 10 : 8)) + '" cy="' + (p.y - 2) + '" r="1.7" class="st-dot"/>';
       if (whole) return; // 全音符无符桿
       // 符桿：组内一律向上（便于连符杠）；单音低于中线向上，否则向下
       var up = opts.beam ? true : (p.idx <= G2_IDX + 4);
@@ -153,6 +155,11 @@
       });
       s += '<line x1="' + stemTops[0].x + '" y1="' + by + '" x2="' + stemTops[stemTops.length - 1].x + '" y2="' + by + '" class="st-beam"/>';
       if (opts.six) s += '<line x1="' + stemTops[0].x + '" y1="' + (by + 6) + '" x2="' + stemTops[stemTops.length - 1].x + '" y2="' + (by + 6) + '" class="st-beam"/>';
+    }
+    // 三连音：符杠/符头上方标 3
+    if (opts.triplet) {
+      var midX = xs.length ? (xs[0] + xs[xs.length - 1]) / 2 : w / 2;
+      s += '<text x="' + midX + '" y="' + (VB_Y + 12) + '" class="st-trip">3</text>';
     }
     return s + '</svg>';
   }

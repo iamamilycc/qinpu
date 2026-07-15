@@ -209,6 +209,7 @@ button.btn-flash { animation: btnFlash .32s ease; }
 .st-barfin { fill: var(--ink); }
 .st-rest { font-size: 16px; text-anchor: middle; fill: var(--ink); }
 .st-dot { fill: var(--ink); }
+.st-trip { font-size: 10px; text-anchor: middle; fill: var(--accent-dark); font-weight: 700; font-style: italic; }
 
 /* ── 播放跟随高亮 ── */
 .dp-col.playing { background: #f3e3c3; border-radius: 8px; }

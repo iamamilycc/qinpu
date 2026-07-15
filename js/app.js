@@ -824,7 +824,7 @@
           for (var dqi = _qi + 1; dqi < line.length && line[dqi][0].kind === 'dash'; dqi++) hold++;
         }
         html += '<div class="dp-col" data-col="' + ti + '"><div class="dp-jp' + (jpCls ? ' ' + jpCls : '') + '">' + jpRow + '</div>' +
-          '<div class="dp-staff">' + (stn.length ? S.cell(stn, { beam: t.beam, eighth: t.eighth, six: t.six, hold: hold }) : S.padCell(false)) + '</div>' +
+          '<div class="dp-staff">' + (stn.length ? S.cell(stn, { beam: t.beam, eighth: t.eighth, six: t.six, hold: hold, triplet: t.triplet }) : S.padCell(false)) + '</div>' +
           '<div class="dp-jz">' + jzRow + '</div></div>';
       });
       html += '</div>';
@@ -884,6 +884,7 @@
         var c1 = duipu.querySelector('.dp-col[data-col="' + pr[0] + '"]');
         var c2 = duipu.querySelector('.dp-col[data-col="' + pr[1] + '"]');
         if (!c1 || !c2) return;
+        // 简谱行连音线弧
         var r1 = c1.querySelector('.dp-jp').getBoundingClientRect();
         var r2 = c2.querySelector('.dp-jp').getBoundingClientRect();
         var x1 = r1.left + r1.width / 2 - dRect.left;
@@ -893,6 +894,18 @@
         path.setAttribute('d', 'M' + x1 + ' ' + y + ' Q' + ((x1 + x2) / 2) + ' ' + (y - Math.min(12, (x2 - x1) * 0.25 + 5)) + ' ' + x2 + ' ' + y);
         path.setAttribute('class', 'arc-path arc-tie');
         layer.appendChild(path);
+        // 五线谱行连音线弧（连符头，弧向下，画在符头下方）
+        var s1 = c1.querySelector('.dp-staff'), s2 = c2.querySelector('.dp-staff');
+        if (s1 && s2) {
+          var q1 = s1.getBoundingClientRect(), q2 = s2.getBoundingClientRect();
+          var sx1 = q1.left + q1.width / 2 - dRect.left;
+          var sx2 = q2.left + q2.width / 2 - dRect.left;
+          var sy = Math.max(q1.bottom, q2.bottom) - dRect.top - 16;
+          var sp = document.createElementNS(NS, 'path');
+          sp.setAttribute('d', 'M' + sx1 + ' ' + sy + ' Q' + ((sx1 + sx2) / 2) + ' ' + (sy + Math.min(10, (sx2 - sx1) * 0.22 + 5)) + ' ' + sx2 + ' ' + sy);
+          sp.setAttribute('class', 'arc-path arc-tie');
+          layer.appendChild(sp);
+        }
       });
       duipu.appendChild(layer);
     });
