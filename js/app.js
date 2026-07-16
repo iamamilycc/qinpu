@@ -264,6 +264,7 @@
     window._notesB = notesB;   // 闭环比对/测试用：结构化读取引擎编配结果
     var prev = null, prevHui = null, failed = [], barJustSeen = true, sanRun = 0;
     var prevSelSemi = null, prevSelType = null, prevPrevSelType = null; // 重复同音散按相间用
+    var noteIdx = 0; // 全曲第几个音（散按相间的曲首例外用）
     toks.forEach(function (t) {
       if (t.kind === 'br' || t.kind === 'tempo' || t.kind === 'volta' || t.kind === 'voltaEnd') return;
       if (t.kind === 'bar' || t.kind === 'time') { barJustSeen = true; return; }
@@ -287,21 +288,23 @@
           t.refs.push(-1);
           return;
         }
-        // 重复同音散按相间（关山月+秋风词双书证：梅庵三连重复音一律"散-按-散"，
-        // 中间换同度按音制造音色对比——111=挑六/中十勾四/挑六、222=挑七/名十勾五/挑七）
+        // 重复同音散按相间（关山月+秋风词+极乐吟三书证：重复音"散-按-散"音色对比，
+        // 111=挑六/中十勾四/挑六、222=挑七/名十勾五/挑七、极乐吟"不见/下"两处八分对也散按）
+        // 适用面：四分音+八分组都适用；十六分/三连音手来不及不换位；曲首两音保持散散立骨架（渔翁书证）
         var sameAsPrev = prevSelSemi !== null && Math.abs(semi - prevSelSemi) < 0.01;
-        if (sameAsPrev && prevSelType === 'san' && !(t.beam || t.six || t.triplet)) {
+        var altOK = !(t.six || t.triplet) && noteIdx > 1;
+        if (sameAsPrev && prevSelType === 'san' && altOK) {
           // 第二音：散→按
           for (var ai = 1; ai < cands.length; ai++) {
             if (cands[ai].type === 'an') { cands.unshift(cands.splice(ai, 1)[0]); break; }
           }
-        } else if (sameAsPrev && prevSelType === 'an' && prevPrevSelType === 'san' &&
-                   !(t.beam || t.six || t.triplet)) {
+        } else if (sameAsPrev && prevSelType === 'an' && prevPrevSelType === 'san' && altOK) {
           // 第三音：按→回散（散-按-散收拢）
           for (var ai2 = 1; ai2 < cands.length; ai2++) {
             if (cands[ai2].type === 'san') { cands.unshift(cands.splice(ai2, 1)[0]); break; }
           }
         }
+        noteIdx++;
         // 快速回返音型 X-Y-X（梅庵书证 3532/6165/656/323）：首音取按音锚，
         // 后续 Y、X 由走音链（撞/退复的实现载体）一弹带出，密处不疏。
         if (gi === 0 && (t.beam || t.six) && t.group.length >= 3) {
@@ -1603,6 +1606,22 @@
       "1 1 1 | 6,5, 1 1 1 6, 1 | 2 2 2 | 535 6 1' 5653 | / " +
       "2 2 2 | 323 5. 1' 3532 | 1 1 1 | 5,. 6, 2. 1 | 2 2 2 | / " +
       "1 2 5. 1' 3532 | 1 1 1 | 1 2 5. 1' 3532 | 1 1 1 ||";
+    convertJianpu();
+  };
+
+  // 示例：极乐吟（紧五弦 1=♭B；据《梅庵琴谱》1931，柳宗元《渔翁》琴歌）——
+  // 2026-07-16 国琴网 pu/855 谱图逐字闭环转录（音高全曲核定），节奏按谱面比例近似待校
+  window.loadDemo5 = function () {
+    if ($('selTuning')) { $('selTuning').value = 'ruibin'; $('selTuning').dispatchEvent(new Event('change')); }
+    if ($('titleB')) $('titleB').value = '极乐吟 · 紧五弦1=♭B（梅庵琴谱1931·渔翁词·逐字闭环已核·节奏近似待校）';
+    if ($('selArrProfile')) $('selArrProfile').value = 'qinge';
+    setArrProfile('qinge');
+    $('inJianpu').value =
+      "T=60 11 6,5, | 1'2' 3'6, 6 - | 56 1'2' 1'6 / " +
+      "56 1'6 53 | 6,. - | (555) 5 35 32 / " +
+      "11 1 | 56 1'1' 61' / " +
+      "6, - | 16, 5,6, 11 | 3 3 3 - / " +
+      "6 6, | 23 21 | 3. 6, 6, - ||";
     convertJianpu();
   };
 

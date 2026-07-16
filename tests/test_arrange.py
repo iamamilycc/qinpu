@@ -170,6 +170,41 @@ with sync_playwright() as p:
     }""")
     chk(zero_walks == 0, "无零距离假走音（回归）")
 
+    # ═══ 极乐吟闭环（紧五1=♭B，docs/闭环对照-极乐吟.md）═══
+    print("— 极乐吟闭环（蕤宾/紧五·跨调验证）—")
+    pg.evaluate("loadDemo5()"); pg.wait_for_timeout(600)
+    chk(pg.eval_on_selector("#selTuning", "e => e.value") == "ruibin", "极乐吟自动切紧五(ruibin)")
+    chk(pg.eval_on_selector("#convMsg", "e => e.textContent").strip() == "", "全曲无超音域红✕")
+    nb5 = pg.evaluate("""() => window._notesB.map(it => {
+      const c = it.cands[it.pick];
+      return { t: c.type, s: c.string, h: c.hui||0, r: it.right, w: !!it.walk,
+               semi: it.walk ? null : Math.round(((c.type==='san') ? window.QinPitch.sanSemitone(c.string)
+                     : c.type==='fan' ? window.QinPitch.fanSemitone(c.string,c.hui)
+                     : window.QinPitch.anSemitone(c.string,c.hui,c.fen||0))*10)/10,
+               cuo: it.cuo||null };
+    })""")
+    # 烟消 5555＝轮拆解（摘剔挑三连）＋第4声，同弦同徽（大师：名十抹六＋轮，同位四声）
+    lun = False
+    for i in range(len(nb5) - 3):
+        a, bq, cq, dq = nb5[i:i+4]
+        if all(x["t"] == "an" and not x["w"] for x in (a, bq, cq, dq)) and \
+           len({(x["s"], x["h"]) for x in (a, bq, cq, dq)}) == 1 and \
+           [a["r"], bq["r"], cq["r"]] == ["摘", "剔", "挑"]:
+            lun = True; break
+    chk(lun, "烟消5555＝同位四声·轮拆解(摘剔挑)+第4声（对齐大师「轮」）")
+    # 绿＝撮[散四 + 大九·六弦]（与秋风词「明」同构，跨曲重现）
+    lv = any(x["cuo"] and x["cuo"].get("ls") == 4 and x["cuo"].get("rs") == 6 and
+             x["cuo"].get("rhui") == 9 for x in nb5)
+    chk(lv, "绿＝撮[散四+大九六]（跨曲重现）")
+    # 重复音散-按-散（不见人 111：散五/名十三/散五——含八分对也相间，极乐吟书证）
+    sas = False
+    for i in range(len(nb5) - 2):
+        a, bq, cq = nb5[i:i+3]
+        if a["w"] or bq["w"] or cq["w"]: continue
+        if a["semi"] == cq["semi"] and a["semi"] is not None and bq["semi"] == a["semi"] and \
+           a["t"] == "san" and bq["t"] == "an" and cq["t"] == "san":
+            sas = True; break
+    chk(sas, "重复音三连＝散-按-散（八分对也相间）")
     chk(len(errs) == 0, "全程无 JS 错误" + ("" if not errs else "：" + "; ".join(errs[:2])))
     b.close()
 
