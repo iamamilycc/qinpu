@@ -867,7 +867,11 @@
           t.grace.forEach(function (g) {
             jpRow += '<i class="grace">' + jpText(g) + '</i>';
             var gs = P.jianpuToSemitone(g.deg, g.sharp, g.oct);
-            var gc = P.candidatesFor(gs, null);
+            // 倚音也要吃泛音段强制与当前编配画像——否则 [泛…]泛 段内倚音会掉回按音。
+            //   书证：获麟操(pu/1078 管平湖·王迪记谱)开篇泛音段，倚音「{6}7」的小字 6 头上
+            //   原谱印有泛音圈○＝大师此音亦弹泛音；旧码 ctx 传 null 故 forceFan 丢失。
+            var gc = P.candidatesFor(gs, null,
+              { forceFan: t.fanForce, profile: ARR_PROFILES[curArrProfile] });
             if (gc.length) jzRow += '<span class="jz-grace">' + J.render(candToNote(gc[0]), 24, { bare: true }) + '</span>';
           });
         }
@@ -1668,6 +1672,21 @@
     $('inJianpu').value =
       "T=60 5_ 5. | 55 5 - | 5 5 - | 35 5 - | 61' 1'1' / " +
       "5 5 | 61' 1'6 | 3 3 | 5#1 1_ 2. | 1. 7,_ | b7, 1 ||";
+    convertJianpu();
+  };
+
+  // 获麟操（据《风宣玄品》1539，管平湖演奏谱·王迪记谱，慢宫调 1=G）
+  //   原谱印「1=G／慢一三六定弦: 3̤5̤6̤ 1̣2̣3̣5̣／[一] ♩=72」——此谱即 mangong base=19 的书证来源
+  //   （四弦印低音1单点→中音1在四弦上方八度 G3=19；旧码缺 base 时全曲记高八度、倍低音掉出地板）。
+  //   开篇 [一] 首行整行印泛音圈○＝泛音段，含倚音「{6}7」的小字亦有圈。
+  //   ⚠ 只录 [一] 首行（全曲四页未录）；节奏比例近似待校。
+  window.loadDemo9 = function () {
+    if ($('selTuning')) { $('selTuning').value = 'mangong'; $('selTuning').dispatchEvent(new Event('change')); }
+    if ($('titleB')) $('titleB').value = '获麟操 · 慢宫调1=G（风宣玄品1539／管平湖演奏谱·王迪记谱·开篇泛音段·节奏近似待校）';
+    if ($('selArrProfile')) $('selArrProfile').value = 'qinge';
+    setArrProfile('qinge');
+    $('inJianpu').value =
+      "T=72 [泛 6,3 3 | 3 6, | 33 3.5 | 3 3 3 | {6}7.6 53 | 3 - ]泛";
     convertJianpu();
   };
 

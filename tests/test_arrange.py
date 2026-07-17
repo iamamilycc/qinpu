@@ -256,6 +256,27 @@ with sync_playwright() as p:
     chk(len(nb8) == 30, "古怨首二行=30音（原谱简谱行14+16，与歌词字数逐格对上）：得 %d" % len(nb8))
     # 定弦书证：低音♭7＝C＝一弦散音（1=D 时 C 正是 ♭7，与原谱定弦 CDE#FABD 一弦吻合）
     chk(any(x["t"] == "san" and x["s"] == 1 for x in nb8), "低音♭7 取一弦散音（＝定弦 C，书证自洽）")
+    # ── 获麟操闭环（慢宫调 1=G，管平湖演奏谱·王迪记谱，据《风宣玄品》1539，国琴网 pu/1078）──
+    # 此谱即 mangong base=19 的书证来源：原谱印「1=G／慢一三六定弦: 3̤5̤6̤ 1̣2̣3̣5̣」。
+    # 缺 base 时 F_OFFSET 退回 key=7 → 全曲记高八度、倍低音掉出一弦地板 → 红✕不可弹。
+    print("— 获麟操（慢宫调1=G·管平湖）闭环 —")
+    pg.evaluate("loadDemo9()"); pg.wait_for_timeout(900)
+    chk(pg.eval_on_selector("#selTuning", "e => e.value") == "mangong", "获麟操自动切慢宫调(mangong)")
+    chk(pg.eval_on_selector("#convMsg", "e => e.textContent").strip() == "",
+        "获麟操全曲无超音域红✕（base=19 生效；缺 base 时倍低音算成 -13 掉出地板）")
+    hl = pg.evaluate("""() => window._notesB.map(it => {
+      const c = it.cands[it.pick];
+      return { t: c.type, s: c.string, h: c.hui||0 };
+    })""")
+    # 开篇泛音段：首音 低音6=16=泛七三（三弦 E2 七徽），次音 中音3=23（泛七六 或 泛五三，皆 23）
+    chk(hl[0]["t"] == "fan" and hl[0]["s"] == 3 and hl[0]["h"] == 7,
+        "首音 低音6 ＝ 泛七三（三弦七徽，base=19 下 E3=16）：得 %r" % (hl[0],))
+    chk(all(x["t"] == "fan" for x in hl), "开篇整行全取泛音（原谱逐音印泛音圈○）")
+    # 倚音也须吃泛音段强制（曾 bug：grace 路径 ctx 传 null 丢 forceFan → 掉回按音）
+    graces = pg.eval_on_selector_all("#scoreB .jz-grace svg.jianzi",
+                                     "els => els.map(e => e.getAttribute('aria-label')||'')")
+    chk(len(graces) >= 1 and all("泛音" in g for g in graces),
+        "泛音段内倚音亦取泛音（原谱小字6头上有○）：得 %r" % graces)
     chk(len(errs) == 0, "全程无 JS 错误" + ("" if not errs else "：" + "; ".join(errs[:2])))
     b.close()
 
