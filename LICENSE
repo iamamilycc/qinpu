@@ -1,0 +1,56 @@
+# 琴谱通 QinPu — 授权条款
+
+Copyright (c) 2026 iamamilycc. 保留所有权利 / All rights reserved.
+
+## 本项目采用 CC BY-NC-SA 4.0 授权
+
+**知识共享 署名-非商业性使用-相同方式共享 4.0 国际**
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+
+授权全文：https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.zh-Hans
+简明摘要：https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hans
+
+### 您可以自由地：
+
+- **共享** —— 在任何媒介以任何形式复制、发行本作品
+- **演绎** —— 修改、转换或以本作品为基础进行创作
+
+### 惟须遵守下列条件：
+
+- **署名（BY）** —— 您必须给出适当的署名，提供指向本项目
+  （https://github.com/iamamilycc/qinpu）的链接，并说明是否作了修改。
+
+- **非商业性使用（NC）** —— **您不得将本作品用于商业目的。**
+  包括但不限于：将本项目（或其衍生作品）作为付费软件、付费服务、
+  App 内购、订阅制产品销售，或用于任何以营利为主要目的的产品之中。
+  如需商业授权，请通过 GitHub Issues 联系。
+
+- **相同方式共享（SA）** —— 如果您再混合、转换或基于本作品进行创作，
+  您必须基于**与原先许可协议相同的许可协议**分发您的贡献。
+
+- **没有附加限制** —— 您不得适用法律术语或技术措施，从而限制其他人
+  做许可协议允许的事情。
+
+### 声明
+
+本授权适用于本仓库中由项目作者创作的全部内容，包括但不限于：
+音律引擎（pitch.js）、减字组字渲染器（jianzi.js）、编配引擎与
+韵味规则（app.js）、五线谱渲染（staff.js）、样式与页面。
+
+## 第三方素材
+
+- **减字字形数据**（js/glyphparts.js）：字形轮廓提取自 GlyphWiki
+  （https://glyphwiki.org），该站字形数据以自由授权（Public Domain）
+  发布，可自由使用与再发布，本项目对其不主张任何权利。
+
+- **古琴采样**（js/samples.js）：源自 Freesound #176266（作者 RafaelCaro），
+  授权 CC-BY 4.0，须保留原作者署名。
+
+- **古琴曲谱**：本仓库不包含任何受版权保护的曲谱扫描件。
+  内置示例曲的简谱为依据公开出版谱本转录的音高数据，仅供研究与学习使用；
+  各谱本之演奏谱、记谱、打谱权利归原权利人所有。
+
+## 免责
+
+本项目按「现状」提供，不附带任何明示或默示的担保。
+减字编配为机器生成的一种演绎参考，不等同于传承打谱。

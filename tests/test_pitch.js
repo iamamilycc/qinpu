@@ -87,6 +87,17 @@ eq('慢商一二弦同音', P.sanSemitone(1) === P.sanSemitone(2), true);
 eq('慢商六弦散音=中音1(c)', P.semitoneToJianpu(P.sanSemitone(6)).text, '1');
 eq('慢商一弦散音=低音1(C)', P.semitoneToJianpu(P.sanSemitone(1)).text, '1,');
 eq('慢商三弦散音=低音4(F)', P.semitoneToJianpu(P.sanSemitone(3)).text, '4,');
+// 慢宫·慢一三六 1=G，base=19：铁证＝获麟操(pu/1078 管平湖演奏谱·王迪记谱，据《风宣玄品》1539)
+//   原谱印「1=G／慢一三六定弦: 3̤5̤6̤ 1̣2̣3̣5̣」——四弦印低音1(单点)故中音1=四弦上方八度 G3=19。
+//   缺 base 时 F_OFFSET 退回 key=7 → 七弦全记高八度、倍低音掉出地板（2026-07-17 真 bug，已修）
+P.setTuning('mangong');
+eq('慢宫四弦散音=低音1(G2)', P.semitoneToJianpu(P.sanSemitone(4)).text, '1,');
+eq('慢宫一弦散音=倍低3(B1)', P.semitoneToJianpu(P.sanSemitone(1)).text, '3,,');
+eq('慢宫七弦散音=低音5(d)', P.semitoneToJianpu(P.sanSemitone(7)).text, '5,');
+eq('慢宫中音1=G3(19,四弦上方八度)', P.jianpuToSemitone(1, false, 0), 19);
+// 地板守卫：倍低音3̤ 正是一弦散音，base 错则算成 -13 掉出地板→红✕
+eq('慢宫倍低3̤=B1一弦散(正好地板)', P.jianpuToSemitone(3, false, -2), -1);
+eq('慢宫倍低3̤有可弹位', P.candidatesFor(P.jianpuToSemitone(3, false, -2), null).length > 0, true);
 P.setTuning('qiliang'); // 紧二五：二弦 D→bE、五弦 A→bB，1=bB（琴书弦法表）
 eq('凄凉五弦散音=1(bB)', P.semitoneToJianpu(P.sanSemitone(5)).text, '1');
 eq('凄凉二弦散音=低4(bE)', P.semitoneToJianpu(P.sanSemitone(2)).text, '4,');

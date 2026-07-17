@@ -1655,6 +1655,22 @@
     convertJianpu();
   };
 
+  // 古怨（宋·姜夔《白石道人歌曲》，侧商调 1=D，虞山吴氏琴谱·吴景略/吴文光）
+  //   原谱印「侧商调 1=D／定弦: CDE#FABD」——与 ceshang 开弦逐弦全同，base=2（默认）经四个减字书证反推确认。
+  //   存世唯一宋代琴曲原谱；以变化音著称（#1/♮1/♭7 皆原谱所印），故也是引擎升号调号(F♯C♯)的实曲验证。
+  //   ⚠ 只录 1=D 段首二行（p1 前两系统）：原谱中段转 1=C（印「前♭7=后1」）、p2 顶转回 1=D，
+  //     引擎一次一个记谱基准，硬并会错——余段待续。节奏比例近似待校（原谱无拍号，散板感）。
+  window.loadDemo8 = function () {
+    if ($('selTuning')) { $('selTuning').value = 'ceshang'; $('selTuning').dispatchEvent(new Event('change')); }
+    if ($('titleB')) $('titleB').value = '古怨 · 侧商调1=D（宋·姜夔／吴文光打谱·首二行·节奏近似待校）';
+    if ($('selArrProfile')) $('selArrProfile').value = 'qinge';
+    setArrProfile('qinge');
+    $('inJianpu').value =
+      "T=60 5_ 5. | 55 5 - | 5 5 - | 35 5 - | 61' 1'1' / " +
+      "5 5 | 61' 1'6 | 3 3 | 5#1 1_ 2. | 1. 7,_ | b7, 1 ||";
+    convertJianpu();
+  };
+
   /* ══════════ 试听速度 / 本地曲库 / 分享链接 ══════════ */
   window._spdScale = 1;
   window.setSpeed = function (v) {

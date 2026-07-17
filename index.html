@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>琴谱通 · 减字谱 ⇄ 简谱</title>
 <meta name="description" content="古琴减字谱与简谱双向转换工具：点选录入减字谱自动译出简谱；输入简谱自动编配古琴指法生成减字谱。">
+<!-- 暂不公开索引：本站仍在逐曲校订中，避免半成品被搜索引擎收录后定型。
+     noindex 对项目页(username.github.io/项目/)才有效——robots.txt 只在域名根目录生效，
+     而本站是项目页，故不能靠 robots.txt。日后要开放收录，删掉此行即可。 -->
+<meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -237,6 +241,7 @@
       <button onclick="loadDemo5()">🎵 名曲：极乐吟(1=♭B)</button>
       <button onclick="loadDemo6()">🎵 名曲：湘妃怨(借正调1=C)</button>
       <button onclick="loadDemo7()">🎵 名曲：捣衣(紧二五七慢一1=♭E)</button>
+      <button onclick="loadDemo8()">🎵 名曲：古怨(侧商调1=D·姜夔)</button>
       <button id="humBtn" onclick="toggleHum()">🎤 哼唱转谱</button>
       <button onclick="document.getElementById('midiIn').click()">🎹 导入 MIDI</button>
       <button onclick="pickScorePhoto()">📷 拍谱识谱</button>
@@ -386,7 +391,10 @@
   </section>
 </main>
 
-<footer>琴谱通 · 减字谱⇄简谱转换 · 音高可算，韵味在人</footer>
+<footer>
+  琴谱通 · 减字谱⇄简谱转换 · 音高可算，韵味在人<br>
+  <small>© 2026 iamamilycc　本站以 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-Hans" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a> 授权：可自由使用与改作，须署名、不得商用、衍生作品须同授权。</small>
+</footer>
 
 <script src="js/pitch.js"></script>
 <div id="vertModal" style="display:none;position:fixed;inset:0;background:rgba(30,25,15,.45);z-index:60" onclick="if(event.target===this)closeVertical()">

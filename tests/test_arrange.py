@@ -112,7 +112,7 @@ with sync_playwright() as p:
     chk("撮" in flab and "勾三弦" in flab and "大指" in flab and "徽" in flab,
         "八度音非散弦时=混合臂撮（散臂+大指按音臂带徽位）：" + flab)
 
-    # ═══ 秋风词逐音闭环（梅庵1931 大师减字 vs 引擎，docs/闭环对照-秋风词.md）═══
+    # ═══ 秋风词逐音闭环（梅庵1931 大师减字 vs 引擎）═══
     print("— 秋风词闭环（琴歌·师承画像）—")
     pg.evaluate("loadDemo4()"); pg.wait_for_timeout(600)
     chk(pg.eval_on_selector("#selArrProfile", "e => e.value") == "qinge",
@@ -170,7 +170,7 @@ with sync_playwright() as p:
     }""")
     chk(zero_walks == 0, "无零距离假走音（回归）")
 
-    # ═══ 极乐吟闭环（紧五1=♭B，docs/闭环对照-极乐吟.md）═══
+    # ═══ 极乐吟闭环（紧五1=♭B）═══
     print("— 极乐吟闭环（蕤宾/紧五·跨调验证）—")
     pg.evaluate("loadDemo5()"); pg.wait_for_timeout(600)
     chk(pg.eval_on_selector("#selTuning", "e => e.value") == "ruibin", "极乐吟自动切紧五(ruibin)")
@@ -205,7 +205,7 @@ with sync_playwright() as p:
            a["t"] == "san" and bq["t"] == "an" and cq["t"] == "san":
             sas = True; break
     chk(sas, "重复音三连＝散-按-散（八分对也相间）")
-    # ═══ 湘妃怨闭环（借正调1=C，docs/闭环对照-湘妃怨.md）═══
+    # ═══ 湘妃怨闭环（借正调1=C）═══
     print("— 湘妃怨闭环（借正调·泛音段节点强度）—")
     pg.evaluate("loadDemo6()"); pg.wait_for_timeout(600)
     chk(pg.eval_on_selector("#selTuning", "e => e.value") == "jiezheng", "湘妃怨自动切借正调(jiezheng)")
@@ -223,7 +223,7 @@ with sync_playwright() as p:
     chk(fan_hui7 >= 12, "泛音段节点强度偏好：≥12音用七徽最强节点（得 %d/14）" % fan_hui7)
     # base=12 验证：中音1(弦6开)与高音1区分——首音泛七四=G3(中5)落在弦4，不掉一弦地板
     chk(all(x["s"] >= 1 for x in nb6), "无音落弦0(base=12防低八度掉地板)")
-    # ═══ 捣衣闭环（紧二五七慢一1=♭E，docs/闭环对照-捣衣.md）═══
+    # ═══ 捣衣闭环（紧二五七慢一1=♭E）═══
     print("— 捣衣闭环（新定弦·base=15·泛音段拾级）—")
     pg.evaluate("loadDemo7()"); pg.wait_for_timeout(600)
     chk(pg.eval_on_selector("#selTuning", "e => e.value") == "daoyi", "捣衣自动切紧二五七慢一(daoyi)")
@@ -239,6 +239,23 @@ with sync_playwright() as p:
         "泛音段泛七一→六拾级而上（对齐大师）：得 %s" % got)
     # base=15 验证：中音1(简谱1)＝弦2七徽泛音（三重验证记谱基准）
     chk(nb7[1]["t"]=="fan" and nb7[1]["s"]==2 and nb7[1]["h"]==7, "中音1＝泛七二(base=15,中1落弦7开/弦2七徽泛)")
+    # ── 古怨闭环（侧商调 1=D，宋·姜夔／吴文光打谱，国琴网 pu/435）──
+    # 原谱印「侧商调 1=D／定弦: CDE#FABD」；引擎 ceshang 开弦逐弦全同，base=2(默认)由减字书证反推确认。
+    # 本曲是引擎**升号调号**(D大调 F♯C♯)的首个实曲端到端验证——此前只有合成断言。
+    print("— 古怨（侧商调1=D·姜夔）闭环 —")
+    pg.evaluate("loadDemo8()"); pg.wait_for_timeout(900)
+    chk(pg.eval_on_selector("#selTuning", "e => e.value") == "ceshang", "古怨自动切侧商调(ceshang)")
+    chk(pg.eval_on_selector("#convMsg", "e => e.textContent").strip() == "", "古怨全曲无超音域红✕（含低音7=C♯2 徽外音）")
+    # 五线谱调号＝升号：每行行首应出现 ♯（D大调 F♯C♯），且不出现调号降号
+    sig = pg.eval_on_selector_all("#scoreB .st-acc", "els => els.map(e => e.textContent)")
+    chk(sig.count("♯") >= 4, "五线谱出升号（D大调 F♯C♯，两行行首各2个）：得 %r" % sig[:6])
+    nb8 = pg.evaluate("""() => window._notesB.map(it => {
+      const c = it.cands[it.pick];
+      return { t: it.walk?'walk':c.type, s: c.string, h: c.hui||0 };
+    })""")
+    chk(len(nb8) == 30, "古怨首二行=30音（原谱简谱行14+16，与歌词字数逐格对上）：得 %d" % len(nb8))
+    # 定弦书证：低音♭7＝C＝一弦散音（1=D 时 C 正是 ♭7，与原谱定弦 CDE#FABD 一弦吻合）
+    chk(any(x["t"] == "san" and x["s"] == 1 for x in nb8), "低音♭7 取一弦散音（＝定弦 C，书证自洽）")
     chk(len(errs) == 0, "全程无 JS 错误" + ("" if not errs else "：" + "; ".join(errs[:2])))
     b.close()
 
