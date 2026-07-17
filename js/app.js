@@ -1625,6 +1625,22 @@
     convertJianpu();
   };
 
+  // 示例：湘妃怨（借正调 1=C，不改弦；吴宗汉传谱）——2026-07-17 国琴网 pu/858 闭环。
+  // 借正调＝正调开弦按 1=C 记谱，定弦 1̣2̣4̣5̣6̣12，中音1落六弦(base=12)。
+  // 开篇＝七徽泛音段（泛七四/五/六/七，闭环已核对大师减字）；按音段用琴歌画像。节奏近似待校。
+  window.loadDemo6 = function () {
+    if ($('selTuning')) { $('selTuning').value = 'jiezheng'; $('selTuning').dispatchEvent(new Event('change')); }
+    if ($('titleB')) $('titleB').value = '湘妃怨 · 借正调1=C（吴宗汉传谱·开篇泛音段已核·节奏近似待校）';
+    if ($('selArrProfile')) $('selArrProfile').value = 'qinge';
+    setArrProfile('qinge');
+    $('inJianpu').value =
+      "T=54 [fan 5 5 6 6 | 1' 6 6 - | 1' 1' 2' 2' | 3' 2' 2' ]fan / " +
+      "2'.3' 5' 6' | 3' 2' 2' - | 1'.2' 3' 5' | 2' 1' 1' - / " +
+      "6 56 65 45 | 2' 2' 2' - | 5 35 53 23 | 1' 1' 1' - / " +
+      "[fan 5 6 2' 1' | 1' - 1' - ]fan | 1' - - - ||";
+    convertJianpu();
+  };
+
   /* ══════════ 试听速度 / 本地曲库 / 分享链接 ══════════ */
   window._spdScale = 1;
   window.setSpeed = function (v) {

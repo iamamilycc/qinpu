@@ -205,6 +205,24 @@ with sync_playwright() as p:
            a["t"] == "san" and bq["t"] == "an" and cq["t"] == "san":
             sas = True; break
     chk(sas, "重复音三连＝散-按-散（八分对也相间）")
+    # ═══ 湘妃怨闭环（借正调1=C，docs/闭环对照-湘妃怨.md）═══
+    print("— 湘妃怨闭环（借正调·泛音段节点强度）—")
+    pg.evaluate("loadDemo6()"); pg.wait_for_timeout(600)
+    chk(pg.eval_on_selector("#selTuning", "e => e.value") == "jiezheng", "湘妃怨自动切借正调(jiezheng)")
+    chk(pg.eval_on_selector("#convMsg", "e => e.textContent").strip() == "", "借正调全曲无超音域红✕(base=12生效)")
+    nb6 = pg.evaluate("""() => window._notesB.map(it => {
+      const c = it.cands[it.pick];
+      return { t: it.walk?'walk':c.type, s: c.string, h: c.hui||0,
+               jp: it.src.deg + (it.src.oct>0?'H':'') };
+    })""")
+    # 开篇泛音段：5 5 6 6 = 泛七四/四/五/五（七徽泛音，节点最强，闭环核对大师减字）
+    chk(nb6[0]["t"]=="fan" and nb6[0]["s"]==4 and nb6[0]["h"]==7, "湘妃怨首音＝泛七四(七徽泛音·对齐大师)：得 %s%d/徽%d" % (nb6[0]["t"], nb6[0]["s"], nb6[0]["h"]))
+    chk(nb6[2]["t"]=="fan" and nb6[2]["s"]==5 and nb6[2]["h"]==7, "第3音6＝泛七五")
+    # 泛音段前14音：节点强度偏好使几乎全取七徽（唯高音3=E4无八度取五徽，大师同）
+    fan_hui7 = sum(1 for x in nb6[:14] if x["t"]=="fan" and x["h"]==7)
+    chk(fan_hui7 >= 12, "泛音段节点强度偏好：≥12音用七徽最强节点（得 %d/14）" % fan_hui7)
+    # base=12 验证：中音1(弦6开)与高音1区分——首音泛七四=G3(中5)落在弦4，不掉一弦地板
+    chk(all(x["s"] >= 1 for x in nb6), "无音落弦0(base=12防低八度掉地板)")
     chk(len(errs) == 0, "全程无 JS 错误" + ("" if not errs else "：" + "; ".join(errs[:2])))
     b.close()
 

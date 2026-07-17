@@ -21,6 +21,7 @@
     <select id="selTuning" class="tuning-sel" title="调弦法">
       <optgroup label="常用">
         <option value="zheng" selected>正调 1=F</option>
+        <option value="jiezheng">借正调 1=C（不改弦）</option>
         <option value="ruibin">蕤宾调·紧五 1=♭B</option>
         <option value="manjiao">慢角调·慢三 1=C</option>
         <option value="huangzhong">黄钟调·紧五慢一 1=♭B</option>
@@ -233,6 +234,7 @@
       <button onclick="loadDemo3()">🎵 名曲：高山·页1</button>
       <button onclick="loadDemo4()">🎵 名曲：秋风词(1=C)</button>
       <button onclick="loadDemo5()">🎵 名曲：极乐吟(1=♭B)</button>
+      <button onclick="loadDemo6()">🎵 名曲：湘妃怨(借正调1=C)</button>
       <button id="humBtn" onclick="toggleHum()">🎤 哼唱转谱</button>
       <button onclick="document.getElementById('midiIn').click()">🎹 导入 MIDI</button>
       <button onclick="pickScorePhoto()">📷 拍谱识谱</button>

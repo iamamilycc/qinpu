@@ -22,6 +22,10 @@
   //   依据：秋风词原谱定弦图「1̣2̣3̣5̣6̣ 1 2」前五弦下加点=低音、六弦=中音1（2026-07-15核对）。
   var TUNINGS = {
     zheng:      { name: '正调 1=F',            open: [0, 2, 5, 7, 9, 12, 14],   key: 5,  flats: [10] },
+    // 借正调 1=C：不改弦，正调开弦按 1=C 记谱（徵调式借调）。定弦=1̣2̣4̣5̣6̣12，
+    //   中音1 落六弦 c(=12) → base:12（同慢角家族，否则低音句掉出一弦地板变红叉）。
+    //   书证：湘妃怨（吴宗汉传谱）原谱印「正调定弦: 1̣2̣4̣5̣6̣12」，2026-07-17 闭环核对。
+    jiezheng:   { name: '借正调 1=C（不改弦）',  open: [0, 2, 5, 7, 9, 12, 14],   key: 0,  base: 12, flats: [] },
     ruibin:     { name: '蕤宾调·紧五 1=♭B',    open: [0, 2, 5, 7, 10, 12, 14],  key: 10, flats: [10, 3] },
     huangzhong: { name: '黄钟调·紧五慢一 1=♭B', open: [-2, 2, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] },
     liyou:      { name: '离忧调·紧五慢一二 1=♭B', open: [-2, 0, 5, 7, 10, 12, 14], key: 10, flats: [10, 3] },
@@ -173,10 +177,15 @@
     // 泛音候选（1-13徽以七徽为轴的谐波家族）：偏好由画像控制
     for (var s2 = 1; s2 <= 7; s2++) {
       for (var hui in FAN_MULT) {
-        var fs = fanSemitone(s2, parseInt(hui, 10));
+        var huiN = parseInt(hui, 10);
+        var fs = fanSemitone(s2, huiN);
         if (fs !== null && Math.abs(fs - target) < 0.35) {
-          var fsc = 2.2 * pf.fan + (prevString && prevString !== s2 ? 0.5 : 0);
-          list.push({ type: 'fan', string: s2, hui: parseInt(hui, 10), score: fsc });
+          // 节点强度偏好（湘妃怨闭环书证：大师泛音一律取最强节点，几乎全用七徽八度）：
+          //   FAN_MULT=谐波序号，越低=节点越响越好按（徽7=2八度最强，徽1/13=8最弱最难）。
+          //   加 (谐波序号-2)*0.35 惩罚，使七徽＞五九徽＞四十徽＞…，冷门高谐波节点最贵。
+          var nodePen = (FAN_MULT[huiN] - 2) * 0.35;
+          var fsc = 2.2 * pf.fan + nodePen + (prevString && prevString !== s2 ? 0.5 : 0);
+          list.push({ type: 'fan', string: s2, hui: huiN, score: fsc });
         }
       }
     }
