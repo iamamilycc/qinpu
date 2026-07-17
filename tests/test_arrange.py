@@ -223,6 +223,22 @@ with sync_playwright() as p:
     chk(fan_hui7 >= 12, "泛音段节点强度偏好：≥12音用七徽最强节点（得 %d/14）" % fan_hui7)
     # base=12 验证：中音1(弦6开)与高音1区分——首音泛七四=G3(中5)落在弦4，不掉一弦地板
     chk(all(x["s"] >= 1 for x in nb6), "无音落弦0(base=12防低八度掉地板)")
+    # ═══ 捣衣闭环（紧二五七慢一1=♭E，docs/闭环对照-捣衣.md）═══
+    print("— 捣衣闭环（新定弦·base=15·泛音段拾级）—")
+    pg.evaluate("loadDemo7()"); pg.wait_for_timeout(600)
+    chk(pg.eval_on_selector("#selTuning", "e => e.value") == "daoyi", "捣衣自动切紧二五七慢一(daoyi)")
+    chk(pg.eval_on_selector("#convMsg", "e => e.textContent").strip() == "", "新定弦全曲无超音域红✕(base=15生效)")
+    nb7 = pg.evaluate("""() => window._notesB.map(it => {
+      const c = it.cands[it.pick];
+      return { t: it.walk?'walk':c.type, s: c.string, h: c.hui||0 };
+    })""")
+    # 开篇泛音段拾级而上：泛七一→泛七二→泛七三→泛七四→泛七五→泛七六（弦1..6 七徽）
+    ladder = [(1,7),(2,7),(3,7),(4,7),(5,7),(6,7)]
+    got = [(nb7[i]["s"], nb7[i]["h"]) for i in range(6)]
+    chk(all(nb7[i]["t"]=="fan" for i in range(6)) and got == ladder,
+        "泛音段泛七一→六拾级而上（对齐大师）：得 %s" % got)
+    # base=15 验证：中音1(简谱1)＝弦2七徽泛音（三重验证记谱基准）
+    chk(nb7[1]["t"]=="fan" and nb7[1]["s"]==2 and nb7[1]["h"]==7, "中音1＝泛七二(base=15,中1落弦7开/弦2七徽泛)")
     chk(len(errs) == 0, "全程无 JS 错误" + ("" if not errs else "：" + "; ".join(errs[:2])))
     b.close()
 

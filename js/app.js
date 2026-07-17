@@ -1641,6 +1641,20 @@
     convertJianpu();
   };
 
+  // 示例：捣衣（徐立荪，梅庵1931）——2026-07-17 国琴网 pu/794 闭环。
+  // 紧二五七慢一 1=♭E，原谱印「定弦 6̤1̣2̣3̣5̣6̣1」，中音1落七弦(base=15)。
+  // 开篇＝七徽泛音段（泛七一→六 拾级而上，闭环已核对大师减字）；按音段用琴歌画像。节奏近似待校。
+  window.loadDemo7 = function () {
+    if ($('selTuning')) { $('selTuning').value = 'daoyi'; $('selTuning').dispatchEvent(new Event('change')); }
+    if ($('titleB')) $('titleB').value = '捣衣 · 紧二五七慢一1=♭E（梅庵·徐立荪谱·开篇泛音段已核·节奏近似待校）';
+    if ($('selArrProfile')) $('selArrProfile').value = 'qinge';
+    setArrProfile('qinge');
+    $('inJianpu').value =
+      "T=128 [fan 6, 1 | 2 3 5 6 | 1 1 | 1 1 | 1 6, 5, | 3, 2, | 1 ]fan / " +
+      "1 6, 5, 6, | 1 1 | 1 1 2 1 | 1 - | 5, 5, | 3, 5, | 5, 6, 1 1 | 1 - ||";
+    convertJianpu();
+  };
+
   /* ══════════ 试听速度 / 本地曲库 / 分享链接 ══════════ */
   window._spdScale = 1;
   window.setSpeed = function (v) {
