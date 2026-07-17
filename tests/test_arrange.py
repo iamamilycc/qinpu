@@ -277,6 +277,46 @@ with sync_playwright() as p:
                                      "els => els.map(e => e.getAttribute('aria-label')||'')")
     chk(len(graces) >= 1 and all("泛音" in g for g in graces),
         "泛音段内倚音亦取泛音（原谱小字6头上有○）：得 %r" % graces)
+    # ── 成公亮《打谱是什么》：指法暗示节奏（减字→节奏，服务「拍图→演绎」链路）──
+    # 「许多节奏是通过指法弹奏动作来体现的，如何动作，就有如何节奏。」
+    # 减字谱不显式记节奏，但指法＝节奏线索；此前 7 条只实现「吟猱稍长」1 条。
+    print("— 打谱：指法暗示节奏（成公亮清单）—")
+    # 文字减字谱输入框在「减字谱→简谱」页，须先切回（本测试前段停在 p2j 页）
+    pg.click("#tab-j2p"); pg.wait_for_timeout(250)
+    pg.select_option("#selTuning", "zheng"); pg.wait_for_timeout(150)
+
+    def dapu(jz, style='yun'):
+        pg.evaluate("window._dapuEv=null")          # 防读到上一轮残留（曾因此误判）
+        pg.fill("#jzTextIn", jz)
+        pg.click("text=解析生成简谱"); pg.wait_for_timeout(400)
+        pg.evaluate("window.QinAudio.playSeq=function(){}")   # 静音，只取事件
+        pg.evaluate("playStyle('%s')" % style); pg.wait_for_timeout(200)
+        return pg.evaluate("window._dapuEv")
+
+    base = dapu("散勾一")[0]["dur"]
+    for nm, jz, exp in [("历 必然稍快", "散历一", 0.6), ("滚拂 必然急促", "散滚拂一", 0.5),
+                        ("撮 长音重音", "散撮一", 1.4), ("吟猱 必然稍长", "散勾一吟", 1.25)]:
+        r = dapu(jz)[0]["dur"] / base
+        chk(abs(r - exp) < 0.02, "%s（×%.2f，期望×%s）" % (nm, r, exp))
+    # 轮/锁/打圆＝固定节奏型：多声连作，不可被位置模板压短（琴歌韵中间音本为 0.5 拍）
+    mid = dapu("散勾一 散勾二 散勾三", 'ge')[1]["dur"]
+    for nm, jz, floor in [("轮", "散勾一 散轮二 散勾三", 1), ("长锁", "散勾一 散长锁二 散勾三", 1),
+                          ("打圆(双音反复型)", "散勾一 散打圆二 散勾三", 2)]:
+        r = dapu(jz, 'ge')[1]["dur"] / mid
+        chk(abs(r - floor / 0.5) < 0.05, "%s 固定节奏型不被压短（×%.1f，期望×%d）" % (nm, r, floor / 0.5))
+    # 掐起大都在后半拍＝切分（出音晚于拍点）
+    q = dapu("散勾一掐起")[0]
+    chk(q["t"] > 0.01, "掐起 在后半拍（t=%.3f>0，切分）" % q["t"])
+    # 文字减字谱解析器须认全 22 种技法——OCR 口述格式经此入打谱；
+    # 旧版白名单只有吟猱绰注 4 类，掐起/罨/撞/进复… 会整词解析失败被丢弃（链路断点）
+    for jz, want in [("散勾一罨", "罨"), ("散勾一虚罨", "虚罨"), ("散勾一撞", "撞"),
+                     ("名九挑四进复", "进复"), ("散勾一带起", "带起"), ("散勾一爪起", "爪起")]:
+        ev = dapu(jz)
+        chk(bool(ev) and want in (ev[0].get("orn") or []), "解析器认得「%s」（OCR→打谱链路）" % want)
+    # 长词优先：虚罨 不可被 罨 截错、双撞 不可被 撞 截错
+    ev = dapu("散勾一虚罨")
+    chk(bool(ev) and ev[0]["orn"] == ["虚罨"], "长词优先：虚罨 未被截成 罨（得 %r）" % (ev[0]["orn"] if ev else None))
+
     chk(len(errs) == 0, "全程无 JS 错误" + ("" if not errs else "：" + "; ".join(errs[:2])))
     b.close()
 
