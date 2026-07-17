@@ -280,6 +280,39 @@ with sync_playwright() as p:
     # ── 成公亮《打谱是什么》：指法暗示节奏（减字→节奏，服务「拍图→演绎」链路）──
     # 「许多节奏是通过指法弹奏动作来体现的，如何动作，就有如何节奏。」
     # 减字谱不显式记节奏，但指法＝节奏线索；此前 7 条只实现「吟猱稍长」1 条。
+    # ── 词界（琴歌）：`词:` 行 → 新字必重新拨弦，走音只在一字之内（一字多声）──
+    # 秋风词闭环量出的三类残余差异之一：「词界信息（叶/寒等词首大师必重新拨弦，
+    # 引擎无歌词无从知晓）」，闭环文档标为「需输入侧支持」的待办。
+    print("— 词界：新字必重新拨弦（琴歌）—")
+    pg.click("#tab-p2j"); pg.wait_for_timeout(200)
+    pg.select_option("#selTuning", "zheng"); pg.wait_for_timeout(150)
+    pg.select_option("#selArrProfile", "yuan2"); pg.wait_for_timeout(150)  # 圆·走韵悠扬 walkMax=3
+
+    def walks(jp):
+        pg.fill("#inJianpu", jp); pg.click("text=转换为减字谱"); pg.wait_for_timeout(600)
+        return pg.evaluate("window._notesB.map(x=>!!x.walk)")
+
+    BASE = "2/4 4 5 6 | 5 -"      # 4=♭B、5、6 皆按音，第2/3音本会走音
+    chk(walks(BASE) == [False, True, True, False], "基准：无词时第2/3音走音（一弹多音）")
+    chk(walks(BASE + "\n词: 秋 风 清 明") == [False, False, False, False],
+        "每音皆新字 → 全部禁走音（词首必重新拨弦）")
+    chk(walks(BASE + "\n词: 秋 - - 明") == [False, True, True, False],
+        "「-」＝承前（一字多声）→ 仍走音")
+    chk(walks(BASE + "\n词: 秋 - 清 明") == [False, True, False, False],
+        "混合：承前音可走、新字禁走")
+    # 歌词行渲染：每列都须有 .dp-ci（含行首谱号列），否则纵向对不齐
+    ncol = pg.eval_on_selector_all("#scoreB .dp-col", "e=>e.length")
+    nci = pg.eval_on_selector_all("#scoreB .dp-ci", "e=>e.length")
+    chk(ncol == nci and nci > 0, "歌词行每列都有 .dp-ci（%d 列 / %d 词格，对齐）" % (ncol, nci))
+    chk(pg.eval_on_selector_all("#scoreB .ci-z", "e=>e.map(x=>x.textContent)") == ["秋", "", "清", "明"],
+        "「-」承前格渲染为空（不显示横线）")
+    # 无词谱不得多出歌词行（防切谱残留）
+    walks(BASE)
+    chk(pg.eval_on_selector_all("#scoreB .dp-ci", "e=>e.length") == 0, "无词谱不出歌词行（hasLyric 每次重算）")
+    # 字数不符须提示
+    walks(BASE + "\n词: 秋 风")
+    chk("歌词 2 格" in pg.inner_text("#convMsg"), "歌词字数≠音数时提示")
+
     print("— 打谱：指法暗示节奏（成公亮清单）—")
     # 文字减字谱输入框在「减字谱→简谱」页，须先切回（本测试前段停在 p2j 页）
     pg.click("#tab-j2p"); pg.wait_for_timeout(250)

@@ -185,6 +185,10 @@ button.btn-flash { animation: btnFlash .32s ease; }
 .jz-walk text { fill: var(--accent-dark); }
 .sharp { font-style: normal; font-size: .7em; margin-right: 1px; }
 .pdot { font-style: normal; margin-left: 2px; }
+/* 歌词行（琴歌）：仅谱中有 `词:` 时出现；一字对一音，与简谱/减字同列对齐 */
+.dp-ci { display: flex; justify-content: center; margin-top: 3px; min-height: 18px; gap: 1px;
+  font-family: var(--font-head); font-size: .82rem; color: var(--ink-2, #5b5347); letter-spacing: .02em; }
+.dp-ci .ci-z { display: inline-block; min-width: 12px; text-align: center; }
 .dp-jz { display: flex; align-items: flex-start; justify-content: center; margin-top: 2px; min-height: 52px; gap: 1px; }
 .jz-cell { cursor: pointer; border-radius: 5px; }
 .jz-cell:hover { background: #efe6d2; }

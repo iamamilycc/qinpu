@@ -4,9 +4,14 @@
   var P = window.QinPitch, J = window.QinJianzi, S = window.QinStaff;
   var $ = function (id) { return document.getElementById(id); };
 
-  // 通用三行列：简谱行 / 五线谱行 / 减字行
-  function colHtml(jp, staff, jz, jpCls) {
+  // 通用三行列：简谱行 /（歌词行）/ 五线谱行 / 减字行
+  //   歌词行仅在谱中有 `词:` 时出现；出现时**每一列都必须有 .dp-ci**（含行首谱号列），
+  //   否则各列行数不等、纵向对不齐。排序照原谱（古怨/秋风词）：简谱→歌词→减字。
+  var hasLyric = false;
+  function ciDiv(ci) { return hasLyric ? '<div class="dp-ci">' + (ci || '') + '</div>' : ''; }
+  function colHtml(jp, staff, jz, jpCls, ci) {
     return '<div class="dp-col"><div class="dp-jp' + (jpCls ? ' ' + jpCls : '') + '">' + jp + '</div>' +
+      ciDiv(ci) +
       '<div class="dp-staff">' + staff + '</div><div class="dp-jz">' + jz + '</div></div>';
   }
 
@@ -207,7 +212,19 @@
   var tieArcs = [];   // 连音线 [fromTi, toTi]
   var notesB = [];    // 扁平音符表 [{cands,pick,src}]，供点击切换
 
+  var lyrWarn = '';   // 歌词字数与音数不符时的提示
   function parseScore(text) {
+    // ── 歌词行（琴歌）：`词: 秋 风 清 - - …` 一格对一音，「-」＝承前（一字多声）──
+    //   为何要它：秋风词闭环量出的三类残余差异之一＝「词界信息（叶/寒等词首大师必重新
+    //   拨弦，引擎无歌词无从知晓）」，闭环文档标为「需输入侧支持」的待办。
+    //   琴歌一字可含多声（走音/轮/进复…），但**新字必重新拨弦**——故词界＝禁走音边界。
+    //   ⚠ 不做行内挂字（如 `5(秋)`）：`(…)` 已被三连音、`[…]` 已被泛音段/一二房占用，会撞语法。
+    var lyr = null;
+    text = text.replace(/^[ \t]*(?:词|詞|ci)[ \t]*[:：][ \t]*(.*)$/gmi, function (_, s) {
+      var arr = s.trim().split(/\s+/).filter(Boolean);
+      lyr = (lyr || []).concat(arr);
+      return '';
+    });
     var toks = [], raw = text.trim().split(/\s+/);
     var inFan = false;  // 泛音段：[泛 … ]泛 之间的音符强制取泛音（成大段，非零星）
     raw.forEach(function (w) {
@@ -261,6 +278,20 @@
         triplet: trip && group.length === 3, fanForce: inFan
       });
     });
+    // 歌词逐音对位：一格对一音（不是一格对一 token——连写 `12` 是两个音）
+    lyrWarn = '';
+    if (lyr) {
+      var nn = toks.reduce(function (a, t) { return a + (t.kind === 'notes' ? t.group.length : 0); }, 0);
+      if (lyr.length !== nn) {
+        lyrWarn = '⚠ 歌词 ' + lyr.length + ' 格 ≠ 音符 ' + nn + ' 个——已按顺序尽量对位，' +
+          '请检查（延音「-」不占字；一字多声处用「-」补格）';
+      }
+      var li = 0;
+      toks.forEach(function (t) {
+        if (t.kind !== 'notes') return;
+        t.lyric = t.group.map(function () { return li < lyr.length ? lyr[li++] : ''; });
+      });
+    }
     return toks;
   }
 
@@ -269,6 +300,7 @@
     var nNotes = toks.reduce(function (a, t) { return a + (t.kind === 'notes' ? t.group.length : 0); }, 0);
     if (nNotes === 0) { alert('没有解析到音符。示例：2/4 1 1 1 1 | 2 1 2 12 | 3 3 3 3'); return; }
     tokensB = toks; notesB = [];
+    hasLyric = toks.some(function (t) { return t.kind === 'notes' && t.lyric; });  // 每次重算，防切谱残留
     window._notesB = notesB;   // 闭环比对/测试用：结构化读取引擎编配结果
     var prev = null, prevHui = null, failed = [], barJustSeen = true, sanRun = 0;
     var prevSelSemi = null, prevSelType = null, prevPrevSelType = null; // 重复同音散按相间用
@@ -335,10 +367,14 @@
         prevPrevSelType = prevSelType;
         prevSelSemi = semi; prevSelType = cands[0].type;
         t.refs.push(notesB.length);
+        // 词界：本音有新字（非「-」承前）→ 大师必重新拨弦，禁走音（一字多声只在字内）
+        var ly = t.lyric ? t.lyric[gi] : '';
         notesB.push({
           cands: cands, pick: 0, src: n,
           mStart: gi === 0 && barJustSeen,
           beam: t.beam,
+          lyric: ly || '',
+          ciStart: !!(ly && ly !== '-' && ly !== '－'),
           dotted: t.dotted && gi === t.group.length - 1
         });
       });
@@ -391,8 +427,9 @@
       });
     })();
     renderScoreB();
-    $('convMsg').textContent = failed.length ?
-      '⚠️ 以下音超出古琴正调音域（标红处）：' + failed.join(' ') : '';
+    $('convMsg').textContent = failed.length
+      ? '⚠️ 以下音超出古琴正调音域（标红处）：' + failed.join(' ') + (lyrWarn ? '　' + lyrWarn : '')
+      : lyrWarn;
   };
 
 
@@ -488,7 +525,10 @@
           it.walkAvail = { dir: target > prevSemi ? '上' : '下', string: prevString, hui: wpos.hui, fen: wpos.fen };
         }
       }
-      if (it.walkAvail && !it.noWalk && it.pick === 0) {
+      // ciStart＝词界（新字）：琴歌里大师必重新拨弦，走音只在一字之内（一字多声）
+      //   ——秋风词闭环书证：「叶/寒」等词首大师必重新拨弦。与 noWalk 分开：
+      //   noWalk 是用户从弹法菜单手动改的覆写，ciStart 是谱面词界事实，二者语义不同。
+      if (it.walkAvail && !it.noWalk && !it.ciStart && it.pick === 0) {
         it.walk = it.walkAvail;
         walkChain++;
         it.right = null; it.orn = [];
@@ -936,7 +976,16 @@
         if (stn.length === 1 && !t.beam && !t.eighth && !t.six && !t.triplet) {
           for (var dqi = _qi + 1; dqi < line.length && line[dqi][0].kind === 'dash'; dqi++) hold++;
         }
+        var ciRow = '';
+        if (hasLyric) {
+          t.refs.forEach(function (r) {
+            if (r === -1) return;
+            var ly = notesB[r].lyric || '';
+            ciRow += '<span class="ci-z">' + (ly === '-' || ly === '－' ? '' : ly) + '</span>';
+          });
+        }
         html += '<div class="dp-col" data-col="' + ti + '"><div class="dp-jp' + (jpCls ? ' ' + jpCls : '') + '">' + jpRow + '</div>' +
+          ciDiv(ciRow) +
           '<div class="dp-staff">' + (stn.length ? S.cell(stn, { beam: t.beam, eighth: t.eighth, six: t.six, hold: hold, triplet: t.triplet }) : S.padCell(false)) + '</div>' +
           '<div class="dp-jz">' + jzRow + '</div></div>';
       });
@@ -1698,9 +1747,12 @@
     if ($('titleB')) $('titleB').value = '古怨 · 侧商调1=D（宋·姜夔／吴文光打谱·首二行·节奏近似待校）';
     if ($('selArrProfile')) $('selArrProfile').value = 'qinge';
     setArrProfile('qinge');
+    // 原谱三行制：简谱／歌词／减字，一字一音（14+16 字与音数逐格对上——闭环已核）
     $('inJianpu').value =
       "T=60 5_ 5. | 55 5 - | 5 5 - | 35 5 - | 61' 1'1' / " +
-      "5 5 | 61' 1'6 | 3 3 | 5#1 1_ 2. | 1. 7,_ | b7, 1 ||";
+      "5 5 | 61' 1'6 | 3 3 | 5#1 1_ 2. | 1. 7,_ | b7, 1 ||\n" +
+      "词: 日 暮 四 山 兮 烟 雾 暗 前 浦 将 维 舟 兮 " +
+      "无 所 追 我 前 兮 不 逮 怀 后 来 兮 何 处 屡 回";
     convertJianpu();
   };
 
