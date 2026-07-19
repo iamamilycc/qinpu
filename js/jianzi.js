@@ -1,3 +1,4 @@
+/* 琴谱通 QinPu · © 2026 iamamilycc · 授权 CC BY-NC-SA 4.0（须署名／非商业／衍生同授权）· https://github.com/iamamilycc/qinpu */
 /* ============================================================
  * 琴谱通 jianzi.js —— 减字 SVG 组字渲染
  *
@@ -206,15 +207,19 @@
         parts.push(text(68, 77 + yy, 14, '三'));
       } else {
         var cuo = note.cuo || { lt: '勾', ls: 0, rt: '挑', rs: note.string };
-        parts.push(text(29, 76 + yy, 20, cuo.lt === '勾' ? '勹' : '乚'));
-        if (cuo.ls) parts.push(text(28, 92 + yy, 14, NUM[cuo.ls]));
-        parts.push(text(71, 76 + yy, 20, cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚'));
-        parts.push(text(72, 92 + yy, 14, NUM[cuo.rs] || strGlyph));
-        // 混合臂撮：高音臂为按音时，右侧小字标注指+徽（如「大九」，秋风词书证）
+        // 容器律：撮两臂的弦号也嵌进指法「怀里」（勹口内/乚内），不写在指法下方
+        // （与单字勾挑托一致：弦号是被指法抱着的小字，非另起一行）
+        parts.push(text(30, 74 + yy, 22, cuo.lt === '勾' ? '勹' : '乚'));
+        if (cuo.ls) parts.push(text(27, 80 + yy, 13, NUM[cuo.ls]));   // 勾勹口内（左下）
+        var rG = cuo.rt === '托' ? '乇' : cuo.rt === '擘' ? '尸' : '乚';
+        parts.push(text(70, 74 + yy, 22, rG));
+        var rnx = rG === '乚' ? 75 : 73, rny = rG === '乚' ? 70 : 79;  // 乚内靠右上／乇尸内靠右
+        parts.push(text(rnx, rny + yy, 13, NUM[cuo.rs] || strGlyph));
+        // 混合臂撮：高音臂为按音时，指+徽小字写在该臂弦号「正上方」（书证：按撮臂＝迷你按音字，指左徽右在上、指法容器抱弦号在下）
         if (cuo.rl && cuo.rhui) {
-          parts.push(text(94, 66 + yy, 10, cuo.rl, 'jz-orn'));
-          parts.push(text(94, 78 + yy, 10, NUM[cuo.rhui], 'jz-orn'));
-          if (cuo.rfen) parts.push(text(94, 89 + yy, 9, NUM[cuo.rfen], 'jz-orn'));
+          parts.push(text(62, 60 + yy, 11, cuo.rl, 'jz-orn'));            // 指（右臂弦号上方·左）
+          parts.push(text(77, 60 + yy, 11, NUM[cuo.rhui], 'jz-orn'));     // 徽（右臂弦号上方·右）
+          if (cuo.rfen) parts.push(text(88, 62 + yy, 9, NUM[cuo.rfen], 'jz-orn')); // 徽分紧随徽后
         }
       }
     } else if (R === '打圆') {
@@ -296,7 +301,7 @@
       else parts.push(clipChar('兴', 50, 52, 50, '25,27 44,27 44,43 56,43 56,27 75,27 75,80 25,80'));
       parts.push(text(50, 92, 18, strGlyph));
     } else if (STACK[R]) {
-      // 叠合律：两部件上下相叠（背锁/短锁/双弹优先 GlyphWiki 整字）
+      // 叠合律：两部件上下相叠——优先 GlyphWiki 整字（背锁/短锁/双弹/长锁同为锁类字形，均能正常居中）
       var GS = gw(R, 50, 52, 56);
       if (GS) parts.push(GS);
       else {

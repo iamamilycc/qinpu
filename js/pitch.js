@@ -1,3 +1,4 @@
+/* 琴谱通 QinPu · © 2026 iamamilycc · 授权 CC BY-NC-SA 4.0（须署名／非商业／衍生同授权）· https://github.com/iamamilycc/qinpu */
 /* ============================================================
  * 琴谱通 pitch.js —— 音律引擎（纯逻辑，无 DOM，可单元测试）
  *
@@ -169,8 +170,11 @@
         // 散音连用衰减：连片散音平直无韵，连得越多下一个散音越贵→散按自然相间
         // sanRunK：琴歌画像调低连用衰减（梅庵书证：入我相思门＝连片散音是常态）
         var sc = (atStart ? 0.8 : 1.5) * pf.san + (ctx.sanRun || 0) * 0.75 * (pf.sanRunK != null ? pf.sanRunK : 1);
-        if (prevString && prevString !== s)
-          sc += (0.5 + 0.2 * Math.abs(s - prevString)) * fastK; // 跨弦越远右手越吃力
+        if (prevString && prevString !== s) {
+          // 跨弦越远右手越吃力；但乐句起点右手可自由归位（句间有呼吸），
+          // 跨弦成本大减，让空弦骨架音不因「留在前一音弦上」的按音就近而被夺（散音起骨架）
+          sc += (0.5 + 0.2 * Math.abs(s - prevString)) * fastK * (atStart ? 0.3 : 1);
+        }
         list.push({ type: 'san', string: s, score: sc });
       } else if (d > 0) {
         var pos = findPosition(s, target);

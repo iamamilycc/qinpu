@@ -1,3 +1,4 @@
+/* 琴谱通 QinPu · © 2026 iamamilycc · 授权 CC BY-NC-SA 4.0（须署名／非商业／衍生同授权）· https://github.com/iamamilycc/qinpu */
 /* ============================================================
  * 琴谱通 samples.js —— 真古琴空弦采样（base64 内嵌 mp3）
  * 来源：RafaelCaro "Guqin-open-strings.wav"，freesound.org #176266

@@ -1,3 +1,4 @@
+/* 琴谱通 QinPu · © 2026 iamamilycc · 授权 CC BY-NC-SA 4.0（须署名／非商业／衍生同授权）· https://github.com/iamamilycc/qinpu */
 /* ============================================================
  * 琴谱通 staff.js —— 简化五线谱渲染（低音谱表，F 大调，自绘 SVG）
  *

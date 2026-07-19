@@ -66,6 +66,20 @@ mel.forEach(function (n) {
 });
 eq('11音旋律往返零误差', roundtripOK, true);
 
+// ── 乐句起点散音锚定（v5·散/按割裂修）──
+//   句首右手可自由归位，空弦骨架音不应因跨弦罚分输给「留在前一音弦上」的按音。
+//   书证：极乐吟句首「散音起骨架」；诊断实测 #51 句首中音2 前音在3弦时误选按3弦9徽。
+(function () {
+  P.setTuning('ruibin');   // 中音2=12=六弦散
+  var qinge = { san: 0.55, an: 1.15, fan: 3.0, sanRunK: 0.2, anchor: true };
+  // 前音在3弦（近六弦按位）：旧行为误选按3弦9徽；应首选散六弦
+  var cAnc = P.candidatesFor(12, 3, { mStart: true, prevHui: 9, profile: qinge });
+  eq('句首中音2(前音3弦)锚定散六弦', [cAnc[0].type, cAnc[0].string], ['san', 6]);
+  // 句中同样情形仍须保留跨弦罚分（不是句首→按音就近合理，散音不强夺）
+  var cMid = P.candidatesFor(12, 3, { mStart: false, prevHui: 9, profile: qinge });
+  eq('句中中音2(前音3弦)不锚定(跨弦罚分照旧)', cMid[0].type === 'an', true);
+  P.setTuning('zheng');
+})();
 
 // ── 调弦法 ──
 P.setTuning('ruibin');   // 紧五：五弦 A→Bb，1=bB

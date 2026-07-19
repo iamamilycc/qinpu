@@ -1,3 +1,4 @@
+/* 琴谱通 QinPu · © 2026 iamamilycc · 授权 CC BY-NC-SA 4.0（须署名／非商业／衍生同授权）· https://github.com/iamamilycc/qinpu */
 /* ============================================================
  * 琴谱通 midi.js —— 标准 MIDI 文件（.mid）导入（纯前端解析）
  *

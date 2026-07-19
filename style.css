@@ -1,3 +1,4 @@
+/* 琴谱通 QinPu · © 2026 iamamilycc · 授权 CC BY-NC-SA 4.0（须署名／非商业／衍生同授权）· https://github.com/iamamilycc/qinpu */
 /* 琴谱通 —— 素纸墨色，向古谱致意 */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -288,7 +289,7 @@ footer::before { content: "❖"; display: block; color: var(--seal); opacity: .5
 /* 撞/退复折叠：被并入前字的音（一弹多音），谱面只留连音弧记号 */
 .jz-cover { display: flex; align-items: center; justify-content: center; min-height: 52px;
   color: #b9a985; font-size: 15px; cursor: pointer; }
-.abbr-num { font-size: 1.45rem; font-weight: 600; font-family: "Songti SC", serif; }
+.abbr-num { font-size: 0.85rem; font-weight: 500; font-family: "Songti SC", serif; color: var(--accent-dark); }
 
 /* 调弦法下拉 */
 .tuning-sel { font-family: inherit; font-size: .82rem; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--accent-dark); }
